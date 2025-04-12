@@ -1,0 +1,11 @@
+ter varíavel determinada implicitamente
+
+e retorno também
+
+se quiser um retorno específico forçar com isso "->"
+
+eu acho os tipos de rust muito foda, deixar o tipo do parâmetro implícito também?
+
+funções -> "tipo" :: "nome"
+
+funções -> "fn" "nome" "()" ":" "retorno"
