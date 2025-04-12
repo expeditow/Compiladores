@@ -12,23 +12,16 @@ ID {LETRA}({LETRA}|{NUM})*
 
 %%
 
-"\n"        {}
 {DELIM} 	{}
-
-
-"main"		{ return TK_MAIN; }
-
-"fn"        { return TK_FUNCAO; }
-"->"        { return TK_IDENTIFICADOR_FUNCAO; } // pode se chamar assim?
-"i16"       { return TK_INT_16; }
-
+"\n"        { return FIM_LINHA;}
 
 [(){}[\];,]	{ return *yytext; }
 
 [+\-*/]		{ return *yytext; }
-
+[=]         { return *yytext; }
 {NUM}		{ yylval.traducao = yytext; return TK_NUM; }
 {ID}		{ yylval.label = yytext; return TK_ID; }
+
 
 .			{}
 

@@ -1,11 +1,37 @@
-ter varíavel determinada implicitamente
+ETAPA 1 - entrega
 
-e retorno também
+Expressão
+Tipos
+    Boolean
+    Int
+    Float
+    Char
+Conversão
+    Implícita
+    Explícita
+Operadores
+    Lógico
+    Aritmético
+    Relacional
+Variável
+Atribuição
 
-se quiser um retorno específico forçar com isso "->"
 
-eu acho os tipos de rust muito foda, deixar o tipo do parâmetro implícito também?
+Começar tentando realizar essa tarefa:
 
-funções -> "tipo" :: "nome"
+    #1 Expressão com Soma  
+        - Fazer a soma sobre inteiros funcionar.
 
-funções -> "fn" "nome" "()" ":" "retorno"
+        Código na LP:
+            1 + 2 + 3
+
+        Código Intermediário:
+            T1 = 2;
+            T2 = 3;
+            T3 = T1 + T2;
+            T4 = 1;
+            T5 = T4 + T3;
+
+    - Realizar o a geração de nome das variáveis temporárias - [x]
+    - Fazer a soma funcionar p como pensamos na linguagem - [x]
+    - Aceitar enter como ';' [x]

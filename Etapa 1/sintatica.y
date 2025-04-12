@@ -7,6 +7,8 @@
 
 using namespace std;
 
+int qntdVariaveisTemp;
+
 struct atributos
 {
 	string label;
@@ -16,62 +18,62 @@ struct atributos
 int yylex(void);
 void yyerror(string);
 
-int contVariaveis = 0;
-
-string nomeiaVariavelTemporaria(){
-    contVariaveis++;
-    return "t" + to_string(contVariaveis);
-}
+string geraNomeTemp();
 
 %}
 
-%token TK_IDENTIFICADOR_FUNCAO
-%token TK_NUM
-%token TK_MAIN TK_ID TK_INT_16 TK_FUNCAO
-
-%start S
+%token TK_NUM TK_ID
+%token FIM_LINHA
+%start START
 
 %left '+'
 
 %%
 
-S 			: TK_FUNCAO TK_MAIN '(' ')' BLOCO // como eu posso colocar um parâmetro opcional aqui?
-			{
-				cout << "/*Compilador Cria*/\n" << "#include <iostream>\n#include<string.h>\n#include<stdio.h>\n" <<  "void main(void)\n{\n" << $5.traducao << "\treturn 0;\n}" << endl; 
-			}
-            | TK_FUNCAO TK_MAIN '(' ')' TK_IDENTIFICADOR_FUNCAO TIPO BLOCO
+START 	    :  COMANDOS
             {
-                cout << "/*Compilador Cria*/\n" << "#include <iostream>\n#include<string.h>\n#include<stdio.h>\n" << $6.traducao <<" main(void)\n{\n" << $7.traducao << "\treturn 0;\n}" << endl; 
+                cout << $1.traducao << endl;
             }
-			;
-TIPO        : TK_INT_16
+            |
+            ;
+
+COMANDOS    : COMANDO COMANDOS
             {
-                $$.traducao = "int";
+                $$.traducao = $1.traducao + $2.traducao;
             }
+            | // pq ele interpretaria como comandos nunca tendo um final
+            {
+                $$.traducao = "";
+            }
+            ;
 
-BLOCO		: '{' COMANDOS '}'
-			{
-				$$.traducao = $2.traducao;
-			}
-			;
+COMANDO     : E FIM_LINHA
+            | FIM_LINHA // precisa disso p caso de pegar mais enters sem nada
+            {
+                $$.traducao = "";
+            }
+            ;
 
-COMANDOS	: COMANDO COMANDOS
-			|
-			;
+E           : E '+' E
+            {
+                $$.label = geraNomeTemp();
+                $$.traducao = $1.traducao + $3.traducao + "\t" + $$.label + 
+                " = " + $1.label + " + " + $3.label + ";\n";
+            }
+            |
+            TK_ID
+            {
+                $$.label = geraNomeTemp();
+                $$.traducao = "\t" + $$.label + " = " + $1.traducao + ";\n";
+            }
+            |
+            TK_NUM
+            {   
+                $$.label = geraNomeTemp();
+                $$.traducao = "\t" + $$.label + " = " + $1.traducao + ";\n";
+            }
+            ;
 
-COMANDO 	: E ';'
-			;
-
-E 			: E '+' E
-			{
-				$$.traducao = $1.traducao + $3.traducao + "\ta = b + c;\n";
-			}
-			| TK_NUM
-			{
-				$$.traducao = "\ta = " + $1.traducao + ";\n";
-			}
-			| TK_ID
-			;
 
 %%
 
@@ -79,8 +81,15 @@ E 			: E '+' E
 
 int yyparse();
 
+string geraNomeTemp(){
+    qntdVariaveisTemp++;
+    return "temp" + to_string(qntdVariaveisTemp);
+}
+
 int main( int argc, char* argv[] )
 {
+    int qntdVariaveisTemp = 0;
+
 	yyparse();
 
 	return 0;
