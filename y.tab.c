@@ -72,6 +72,7 @@
 #include <iostream>
 #include <string>
 #include <sstream>
+#include <bits/stdc++.h>
 
 #define YYSTYPE atributos
 
@@ -88,7 +89,7 @@ struct atributos
 
 struct infos
 {
-    string nomeVar; // célula de memória que vamos armazenar, inicializando la no c
+    string nomeVariavel; // célula de memória que vamos armazenar, inicializando la no c
     string tipoVar;  // tipo da célula, muda a representação dependendo do tipo
 
     // oq mais precisamos aq p guardar na tabela de símbolos?
@@ -97,10 +98,11 @@ struct infos
 int yylex(void);
 void yyerror(string);
 
-string geraNomeTemp();
+set<string> temporarias;
 
+string  geraNomeTemp();
 
-#line 104 "y.tab.c"
+#line 106 "y.tab.c"
 
 # ifndef YY_CAST
 #  ifdef __cplusplus
@@ -583,8 +585,8 @@ static const yytype_int8 yytranslate[] =
 /* YYRLINE[YYN] -- Source line where rule number YYN was defined.  */
 static const yytype_int8 yyrline[] =
 {
-       0,    43,    43,    47,    50,    55,    60,    61,    62,    65,
-      72,    79,    84,    91,    98,   105,   112,   117
+       0,    43,    43,    51,    54,    59,    64,    65,    66,    69,
+      75,    81,    86,    93,    99,   105,   112,   117
 };
 #endif
 
@@ -1155,106 +1157,106 @@ yyreduce:
     {
   case 2: /* START: CMDS  */
 #line 44 "sintatica.y"
-            {
-                cout << yyvsp[0].traducao << endl;
+            {   
+                string declaracoes = "";
+                for(auto i: temporarias){
+                    declaracoes += "\tint " + i + ";\n";
+                }
+                cout << declaracoes << endl << yyvsp[0].traducao << endl;
             }
-#line 1162 "y.tab.c"
+#line 1168 "y.tab.c"
     break;
 
   case 4: /* CMDS: CMD CMDS  */
-#line 51 "sintatica.y"
+#line 55 "sintatica.y"
             {
                 yyval.traducao = yyvsp[-1].traducao + yyvsp[0].traducao;
             }
-#line 1170 "y.tab.c"
+#line 1176 "y.tab.c"
     break;
 
   case 5: /* CMDS: %empty  */
-#line 55 "sintatica.y"
+#line 59 "sintatica.y"
             {
                 yyval.traducao = "";
             }
-#line 1178 "y.tab.c"
-    break;
-
-  case 6: /* CMD: EXP FIM_LINHA  */
-#line 60 "sintatica.y"
-                            { yyval.traducao = yyvsp[-1].traducao; }
 #line 1184 "y.tab.c"
     break;
 
-  case 7: /* CMD: FIM_LINHA  */
-#line 61 "sintatica.y"
-                            { yyval.traducao = "";          }
+  case 6: /* CMD: EXP FIM_LINHA  */
+#line 64 "sintatica.y"
+                            { yyval.traducao = yyvsp[-1].traducao; }
 #line 1190 "y.tab.c"
     break;
 
-  case 8: /* CMD: EXP  */
-#line 62 "sintatica.y"
-                            { yyval.traducao = yyvsp[0].traducao; }
+  case 7: /* CMD: FIM_LINHA  */
+#line 65 "sintatica.y"
+                            { yyval.traducao = "";          }
 #line 1196 "y.tab.c"
     break;
 
-  case 9: /* EXP: EXP '+' TERMO  */
+  case 8: /* CMD: EXP  */
 #line 66 "sintatica.y"
+                            { yyval.traducao = yyvsp[0].traducao; }
+#line 1202 "y.tab.c"
+    break;
+
+  case 9: /* EXP: EXP '+' TERMO  */
+#line 70 "sintatica.y"
             { 
                 yyval.label = geraNomeTemp();
                 yyval.traducao = yyvsp[-2].traducao + yyvsp[0].traducao + "\t" + 
-                "int " + yyval.label + ";\n" + "\t" + 
                 yyval.label + " = " + yyvsp[-2].label + " + " + yyvsp[0].label + ";\n";
             }
-#line 1207 "y.tab.c"
+#line 1212 "y.tab.c"
     break;
 
   case 10: /* EXP: EXP '-' TERMO  */
-#line 73 "sintatica.y"
+#line 76 "sintatica.y"
             { 
                 yyval.label = geraNomeTemp();
                 yyval.traducao = yyvsp[-2].traducao + yyvsp[0].traducao +
-                "\tint " + yyval.label + ";\n" +
                 "\t" + yyval.label + " = " + yyvsp[-2].label + " - " + yyvsp[0].label + ";\n";
             }
-#line 1218 "y.tab.c"
+#line 1222 "y.tab.c"
     break;
 
   case 11: /* EXP: TERMO  */
-#line 80 "sintatica.y"
+#line 82 "sintatica.y"
             { 
                 yyval.label = yyvsp[0].label;
                 yyval.traducao = yyvsp[0].traducao;      
             }
-#line 1227 "y.tab.c"
+#line 1231 "y.tab.c"
     break;
 
   case 12: /* EXP: TK_ID  */
-#line 85 "sintatica.y"
+#line 87 "sintatica.y"
             {
                 yyval.label = geraNomeTemp();
-                yyval.traducao = "\tint " + yyval.label + ";\n" + "\t" + yyval.label + " = " + yyvsp[0].traducao + ";\n";
+                yyval.traducao = "\t" + yyval.label + ";\n" + "\t" + yyval.label + " = " + yyvsp[0].traducao + ";\n";
             }
-#line 1236 "y.tab.c"
+#line 1240 "y.tab.c"
     break;
 
   case 13: /* TERMO: TERMO '*' FATOR  */
-#line 92 "sintatica.y"
+#line 94 "sintatica.y"
             { 
                 yyval.label = geraNomeTemp();
                 yyval.traducao = yyvsp[-2].traducao + yyvsp[0].traducao +
-                "\tint " + yyval.label + ";\n" +
                 "\t" + yyval.label + " = " + yyvsp[-2].label + " * " + yyvsp[0].label + ";\n";
             }
-#line 1247 "y.tab.c"
+#line 1250 "y.tab.c"
     break;
 
   case 14: /* TERMO: TERMO '/' FATOR  */
-#line 99 "sintatica.y"
+#line 100 "sintatica.y"
             { 
-                yyval.label = geraNomeTemp();
+                yyval.label =geraNomeTemp();
                 yyval.traducao = yyvsp[-2].traducao + yyvsp[0].traducao +
-                "\tint " + yyval.label + ";\n" +
                 "\t" + yyval.label + " = " + yyvsp[-2].label + " / " + yyvsp[0].label + ";\n";
             }
-#line 1258 "y.tab.c"
+#line 1260 "y.tab.c"
     break;
 
   case 15: /* TERMO: FATOR  */
@@ -1263,7 +1265,7 @@ yyreduce:
                 yyval.label = yyvsp[0].label;
                 yyval.traducao = yyvsp[0].traducao; 
             }
-#line 1267 "y.tab.c"
+#line 1269 "y.tab.c"
     break;
 
   case 16: /* FATOR: '(' EXP ')'  */
@@ -1272,20 +1274,20 @@ yyreduce:
                 yyval.label = yyvsp[-1].label;
                 yyval.traducao = yyvsp[-1].traducao;
             }
-#line 1276 "y.tab.c"
+#line 1278 "y.tab.c"
     break;
 
   case 17: /* FATOR: TK_NUM  */
 #line 118 "sintatica.y"
             { 
                 yyval.label = geraNomeTemp();
-                yyval.traducao = "\tint " + yyval.label + ";\n" + "\t" + yyval.label + " = " + yyvsp[0].traducao + ";\n"; 
+                yyval.traducao = "\t" + yyval.label + " = " + yyvsp[0].traducao + ";\n"; 
             }
-#line 1285 "y.tab.c"
+#line 1287 "y.tab.c"
     break;
 
 
-#line 1289 "y.tab.c"
+#line 1291 "y.tab.c"
 
       default: break;
     }
@@ -1486,12 +1488,15 @@ yyreturnlab:
 int yyparse();
 
 string geraNomeTemp(){
+    
     qntdVariaveisTemp++;
-    return "temp" + to_string(qntdVariaveisTemp);
+    temporarias.insert("T" + to_string(qntdVariaveisTemp));
+    return "T" + to_string(qntdVariaveisTemp);
 }
 
 int main( int argc, char* argv[] )
-{
+{   
+    set<string> temporarias;
     int qntdVariaveisTemp = 0;
     int linhas = 0;
 

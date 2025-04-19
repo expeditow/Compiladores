@@ -2,6 +2,7 @@
 #include <iostream>
 #include <string>
 #include <sstream>
+#include <bits/stdc++.h>
 
 #define YYSTYPE atributos
 
@@ -18,7 +19,7 @@ struct atributos
 
 struct infos
 {
-    string nomeVar; // célula de memória que vamos armazenar, inicializando la no c
+    string nomeVariavel; // célula de memória que vamos armazenar, inicializando la no c
     string tipoVar;  // tipo da célula, muda a representação dependendo do tipo
 
     // oq mais precisamos aq p guardar na tabela de símbolos?
@@ -27,22 +28,25 @@ struct infos
 int yylex(void);
 void yyerror(string);
 
-string geraNomeTemp();
+set<string> temporarias;
 
+string  geraNomeTemp();
 %}
 
 %token TK_NUM TK_ID
 %token FIM_LINHA
 %start START
 
-// Tenho que corrigir isso aqui, fazer em regra de produção mesmo
-
 
 %%
 
 START 	    :  CMDS
-            {
-                cout << $1.traducao << endl;
+            {   
+                string declaracoes = "";
+                for(auto i: temporarias){
+                    declaracoes += "\tint " + i + ";\n";
+                }
+                cout << declaracoes << endl << $1.traducao << endl;
             }
             |
             ;
@@ -66,14 +70,12 @@ EXP         : EXP '+' TERMO
             { 
                 $$.label = geraNomeTemp();
                 $$.traducao = $1.traducao + $3.traducao + "\t" + 
-                "int " + $$.label + ";\n" + "\t" + 
                 $$.label + " = " + $1.label + " + " + $3.label + ";\n";
             }
             | EXP '-' TERMO 
             { 
                 $$.label = geraNomeTemp();
                 $$.traducao = $1.traducao + $3.traducao +
-                "\tint " + $$.label + ";\n" +
                 "\t" + $$.label + " = " + $1.label + " - " + $3.label + ";\n";
             }
             | TERMO         
@@ -84,7 +86,7 @@ EXP         : EXP '+' TERMO
             | TK_ID
             {
                 $$.label = geraNomeTemp();
-                $$.traducao = "\tint " + $$.label + ";\n" + "\t" + $$.label + " = " + $1.traducao + ";\n";
+                $$.traducao = "\t" + $$.label + ";\n" + "\t" + $$.label + " = " + $1.traducao + ";\n";
             }
             ;
 
@@ -92,14 +94,12 @@ TERMO       : TERMO '*' FATOR
             { 
                 $$.label = geraNomeTemp();
                 $$.traducao = $1.traducao + $3.traducao +
-                "\tint " + $$.label + ";\n" +
                 "\t" + $$.label + " = " + $1.label + " * " + $3.label + ";\n";
             }
             | TERMO '/' FATOR 
             { 
-                $$.label = geraNomeTemp();
+                $$.label =geraNomeTemp();
                 $$.traducao = $1.traducao + $3.traducao +
-                "\tint " + $$.label + ";\n" +
                 "\t" + $$.label + " = " + $1.label + " / " + $3.label + ";\n";
             }
             | FATOR          
@@ -114,10 +114,10 @@ FATOR       : '(' EXP ')'
                 $$.label = $2.label;
                 $$.traducao = $2.traducao;
             }
-            | TK_NUM         
+            | TK_NUM         // só aqui que a gente gera declaração
             { 
                 $$.label = geraNomeTemp();
-                $$.traducao = "\tint " + $$.label + ";\n" + "\t" + $$.label + " = " + $1.traducao + ";\n"; 
+                $$.traducao = "\t" + $$.label + " = " + $1.traducao + ";\n"; 
             }
             ;
 
@@ -128,12 +128,15 @@ FATOR       : '(' EXP ')'
 int yyparse();
 
 string geraNomeTemp(){
+    
     qntdVariaveisTemp++;
-    return "temp" + to_string(qntdVariaveisTemp);
+    temporarias.insert("T" + to_string(qntdVariaveisTemp));
+    return "T" + to_string(qntdVariaveisTemp);
 }
 
 int main( int argc, char* argv[] )
-{
+{   
+    set<string> temporarias;
     int qntdVariaveisTemp = 0;
     int linhas = 0;
 

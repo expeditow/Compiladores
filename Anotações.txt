@@ -19,7 +19,7 @@ Atribuição
 
 Começar tentando realizar essa tarefa:
 
-    #1 Expressão com Soma  
+    #1 Expressão com Soma  - [x]
         - Fazer a soma sobre inteiros funcionar.
 
         Código na LP:
@@ -44,5 +44,69 @@ pois, ele precisa saber o tipo (faremos inferência pela árvore).
 - Tradução: vai ser a linha gerada em código c, geralmente vai ser uma string para nós, mas quando convertermos vai se transfor-
 mar em C.
 
-Defini as ordens de precedência, 1* parênteses, 2 multiplicação/divisão e 3 soma/subtração, claro, isso se aplica apenas ao tipo do yacc
+    #2 Expressão com os Demais Operadores Aritméticos  - [x]
+    - Fazer as demais operações aritméticas sobre inteiros funcionarem.
+
+    Código na LP:
+    1 + 2 * 3
+
+    Código Intermediário:
+    T1 = 2;
+    T2 = 3;
+    T3 = T1 * T2;
+    T4 = 1;
+    T5 = T4 + T3;
+
+    #4 Desenvolvimento do Parênteses  - [x]
+    - Deverá permitir o uso de parênteses nas expressões.
+
+    Código na LP:
+    (1 + 2) * 3
+
+    Código Intermediário:
+    int T1;
+    int T2;
+    int T3;
+    int T4;
+    int T5;
+
+    T1 = 1;
+    T2 = 2;
+    T3 = T1 + T2;
+    T4 = 3;
+    T5 = T4 * T3;
+    
+    Defini as ordens de precedência, 1* parênteses, 2 multiplicação/divisão e 3 soma/subtração, claro, isso se aplica apenas ao tipo do yacc
 que é ascendente
+
+    #3 Declaração das Cédulas de Memória Usadas  - [ ]
+    - Deverá declarar antes do código todas as cédulas de memória utilizadas.
+
+    Código na LP:
+    1 + 2 * 3
+
+    Código Intermediário:
+    int T1;
+    int T2;
+    int T3;
+    int T4;
+    int T5;
+
+    T1 = 2;
+    T2 = 3;
+    T3 = T1 * T2;
+    T4 = 1;
+    T5 = T4 + T3;
+
+    Declarar variáveis, vou tentar além de implementar isso, criar já a parte da tabela de símbolos
+
+    posso passar um contador de valores, mas como vou usar isso? -> posso apenas declarar sem se preocupar com quais ele vai se atribuir
+
+
+    primeiro, como eu posso saber a quantidade de variáveis que eu vou precisar utilizar? - posso saber pela quantidade de 
+    números + quantidade de operadores
+
+    p declarar de início eu posso fazer de uma forma muito idiota, que consiste em apenas "declarar" sem necessariamente usa-las, pois eu
+    precisaria da tabela de símbolos, que ainda n foi implementanda,
+    
+    usar um vector e atribuir cada uma a ela

@@ -3,6 +3,10 @@
         "*.sqlbook": "sql",
         "*.ndjson": "jsonl",
         "*.dbclient-js": "javascript",
-        "*.y": "cpp"
+        "*.y": "cpp",
+        "iostream": "cpp",
+        "string": "cpp",
+        "bitset": "cpp",
+        "set": "cpp"
     }
 }
