@@ -1,0 +1,48 @@
+ETAPA 1 - entrega
+
+Expressão
+Tipos
+    Boolean
+    Int
+    Float
+    Char
+Conversão
+    Implícita
+    Explícita
+Operadores
+    Lógico
+    Aritmético
+    Relacional
+Variável
+Atribuição
+
+
+Começar tentando realizar essa tarefa:
+
+    #1 Expressão com Soma  
+        - Fazer a soma sobre inteiros funcionar.
+
+        Código na LP:
+            1 + 2 + 3
+
+        Código Intermediário:
+            T1 = 2;
+            T2 = 3;
+            T3 = T1 + T2;
+            T4 = 1;
+            T5 = T4 + T3;
+
+    - Realizar o a geração de nome das variáveis temporárias - [x]
+    - Fazer a soma funcionar p como pensamos na linguagem - [x]
+    - Aceitar enter como ';' [x]
+
+- Label: vai funcionar como uma célula de memória, isto é, ele vai funcionar como os registrados do assembly.
+Mas no nosso caso, como estamos gerando código intermediário, ele vai funcionar como as variáveis do código em c.
+Então, se por exemplo, definimos nossa variável como var x, na minha linguagem, deve aparecer algo como int x em c,
+pois, ele precisa saber o tipo (faremos inferência pela árvore).
+
+- Tradução: vai ser a linha gerada em código c, geralmente vai ser uma string para nós, mas quando convertermos vai se transfor-
+mar em C.
+
+Defini as ordens de precedência, 1* parênteses, 2 multiplicação/divisão e 3 soma/subtração, claro, isso se aplica apenas ao tipo do yacc
+que é ascendente
