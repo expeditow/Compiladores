@@ -65,14 +65,16 @@ CMD         : EXP FIM_LINHA { $$.traducao = $1.traducao; }
 EXP         : EXP '+' TERMO 
             { 
                 $$.label = geraNomeTemp();
-                $$.traducao = $1.traducao + $3.traducao + "\t" + $$.label + 
-                " = " + $1.label + " + " + $3.label + ";\n";
+                $$.traducao = $1.traducao + $3.traducao + "\t" + 
+                "int " + $$.label + ";\n" + "\t" + 
+                $$.label + " = " + $1.label + " + " + $3.label + ";\n";
             }
             | EXP '-' TERMO 
             { 
                 $$.label = geraNomeTemp();
-                $$.traducao = $1.traducao + $3.traducao + "\t" + 
-                $$.label + " = " + $1.label + " - " + $3.label + ";\n";
+                $$.traducao = $1.traducao + $3.traducao +
+                "\tint " + $$.label + ";\n" +
+                "\t" + $$.label + " = " + $1.label + " - " + $3.label + ";\n";
             }
             | TERMO         
             { 
@@ -89,14 +91,16 @@ EXP         : EXP '+' TERMO
 TERMO       : TERMO '*' FATOR 
             { 
                 $$.label = geraNomeTemp();
-                $$.traducao = $1.traducao + $3.traducao + "\t" + 
-                $$.label + " = " + $1.label + " * " + $3.label + ";\n";
+                $$.traducao = $1.traducao + $3.traducao +
+                "\tint " + $$.label + ";\n" +
+                "\t" + $$.label + " = " + $1.label + " * " + $3.label + ";\n";
             }
             | TERMO '/' FATOR 
             { 
                 $$.label = geraNomeTemp();
-                $$.traducao = $1.traducao + $3.traducao + "\t" + 
-                $$.label + " = " + $1.label + " / " + $3.label + ";\n";
+                $$.traducao = $1.traducao + $3.traducao +
+                "\tint " + $$.label + ";\n" +
+                "\t" + $$.label + " = " + $1.label + " / " + $3.label + ";\n";
             }
             | FATOR          
             { 

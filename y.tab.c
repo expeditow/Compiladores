@@ -584,7 +584,7 @@ static const yytype_int8 yytranslate[] =
 static const yytype_int8 yyrline[] =
 {
        0,    43,    43,    47,    50,    55,    60,    61,    62,    65,
-      71,    77,    82,    89,    95,   101,   108,   113
+      72,    79,    84,    91,    98,   105,   112,   117
 };
 #endif
 
@@ -1199,89 +1199,93 @@ yyreduce:
 #line 66 "sintatica.y"
             { 
                 yyval.label = geraNomeTemp();
-                yyval.traducao = yyvsp[-2].traducao + yyvsp[0].traducao + "\t" + yyval.label + 
-                " = " + yyvsp[-2].label + " + " + yyvsp[0].label + ";\n";
+                yyval.traducao = yyvsp[-2].traducao + yyvsp[0].traducao + "\t" + 
+                "int " + yyval.label + ";\n" + "\t" + 
+                yyval.label + " = " + yyvsp[-2].label + " + " + yyvsp[0].label + ";\n";
             }
-#line 1206 "y.tab.c"
+#line 1207 "y.tab.c"
     break;
 
   case 10: /* EXP: EXP '-' TERMO  */
-#line 72 "sintatica.y"
+#line 73 "sintatica.y"
             { 
                 yyval.label = geraNomeTemp();
-                yyval.traducao = yyvsp[-2].traducao + yyvsp[0].traducao + "\t" + 
-                yyval.label + " = " + yyvsp[-2].label + " - " + yyvsp[0].label + ";\n";
+                yyval.traducao = yyvsp[-2].traducao + yyvsp[0].traducao +
+                "\tint " + yyval.label + ";\n" +
+                "\t" + yyval.label + " = " + yyvsp[-2].label + " - " + yyvsp[0].label + ";\n";
             }
-#line 1216 "y.tab.c"
+#line 1218 "y.tab.c"
     break;
 
   case 11: /* EXP: TERMO  */
-#line 78 "sintatica.y"
+#line 80 "sintatica.y"
             { 
                 yyval.label = yyvsp[0].label;
                 yyval.traducao = yyvsp[0].traducao;      
             }
-#line 1225 "y.tab.c"
+#line 1227 "y.tab.c"
     break;
 
   case 12: /* EXP: TK_ID  */
-#line 83 "sintatica.y"
+#line 85 "sintatica.y"
             {
                 yyval.label = geraNomeTemp();
                 yyval.traducao = "\tint " + yyval.label + ";\n" + "\t" + yyval.label + " = " + yyvsp[0].traducao + ";\n";
             }
-#line 1234 "y.tab.c"
+#line 1236 "y.tab.c"
     break;
 
   case 13: /* TERMO: TERMO '*' FATOR  */
-#line 90 "sintatica.y"
+#line 92 "sintatica.y"
             { 
                 yyval.label = geraNomeTemp();
-                yyval.traducao = yyvsp[-2].traducao + yyvsp[0].traducao + "\t" + 
-                yyval.label + " = " + yyvsp[-2].label + " * " + yyvsp[0].label + ";\n";
+                yyval.traducao = yyvsp[-2].traducao + yyvsp[0].traducao +
+                "\tint " + yyval.label + ";\n" +
+                "\t" + yyval.label + " = " + yyvsp[-2].label + " * " + yyvsp[0].label + ";\n";
             }
-#line 1244 "y.tab.c"
+#line 1247 "y.tab.c"
     break;
 
   case 14: /* TERMO: TERMO '/' FATOR  */
-#line 96 "sintatica.y"
+#line 99 "sintatica.y"
             { 
                 yyval.label = geraNomeTemp();
-                yyval.traducao = yyvsp[-2].traducao + yyvsp[0].traducao + "\t" + 
-                yyval.label + " = " + yyvsp[-2].label + " / " + yyvsp[0].label + ";\n";
+                yyval.traducao = yyvsp[-2].traducao + yyvsp[0].traducao +
+                "\tint " + yyval.label + ";\n" +
+                "\t" + yyval.label + " = " + yyvsp[-2].label + " / " + yyvsp[0].label + ";\n";
             }
-#line 1254 "y.tab.c"
+#line 1258 "y.tab.c"
     break;
 
   case 15: /* TERMO: FATOR  */
-#line 102 "sintatica.y"
+#line 106 "sintatica.y"
             { 
                 yyval.label = yyvsp[0].label;
                 yyval.traducao = yyvsp[0].traducao; 
             }
-#line 1263 "y.tab.c"
+#line 1267 "y.tab.c"
     break;
 
   case 16: /* FATOR: '(' EXP ')'  */
-#line 109 "sintatica.y"
+#line 113 "sintatica.y"
             { 
                 yyval.label = yyvsp[-1].label;
                 yyval.traducao = yyvsp[-1].traducao;
             }
-#line 1272 "y.tab.c"
+#line 1276 "y.tab.c"
     break;
 
   case 17: /* FATOR: TK_NUM  */
-#line 114 "sintatica.y"
+#line 118 "sintatica.y"
             { 
                 yyval.label = geraNomeTemp();
                 yyval.traducao = "\tint " + yyval.label + ";\n" + "\t" + yyval.label + " = " + yyvsp[0].traducao + ";\n"; 
             }
-#line 1281 "y.tab.c"
+#line 1285 "y.tab.c"
     break;
 
 
-#line 1285 "y.tab.c"
+#line 1289 "y.tab.c"
 
       default: break;
     }
@@ -1474,7 +1478,7 @@ yyreturnlab:
   return yyresult;
 }
 
-#line 120 "sintatica.y"
+#line 124 "sintatica.y"
 
 
 #include "lex.yy.c"
