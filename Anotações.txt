@@ -79,7 +79,7 @@ mar em C.
     Defini as ordens de precedência, 1* parênteses, 2 multiplicação/divisão e 3 soma/subtração, claro, isso se aplica apenas ao tipo do yacc
 que é ascendente
 
-    #3 Declaração das Cédulas de Memória Usadas  - [ ]
+    #3 Declaração das Cédulas de Memória Usadas  - [x]
     - Deverá declarar antes do código todas as cédulas de memória utilizadas.
 
     Código na LP:
@@ -102,7 +102,6 @@ que é ascendente
 
     posso passar um contador de valores, mas como vou usar isso? -> posso apenas declarar sem se preocupar com quais ele vai se atribuir
 
-
     primeiro, como eu posso saber a quantidade de variáveis que eu vou precisar utilizar? - posso saber pela quantidade de 
     números + quantidade de operadores
 
@@ -110,3 +109,25 @@ que é ascendente
     precisaria da tabela de símbolos, que ainda n foi implementanda,
     
     usar um vector e atribuir cada uma a ela
+
+    Era só declarar e ir jogando em alguma coleção qualquer 
+
+    #5 Atribuição  
+    - Deverá permitir a atribuição a uma variável e sua utilização em expressões.
+
+    Código na LP:
+    A = (A + 2) * 3
+
+    Código Intermediário:
+    int T1;
+    int T2;
+    int T3;
+    int T4;
+    int T5;
+
+    T1 = A;
+    T2 = 2;
+    T3 = T1 + T2;
+    T4 = 3;
+    T5 = T4 * T3;
+    A = T5;

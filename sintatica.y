@@ -63,8 +63,17 @@ CMDS        : CMD CMDS
 
 CMD         : EXP FIM_LINHA { $$.traducao = $1.traducao; }
             | FIM_LINHA     { $$.traducao = "";          }
+            | ATR           { $$.traducao = $1.traducao; }
             | EXP           { $$.traducao = $1.traducao; }
             ;
+
+ATR         : TK_ID '=' EXP
+            {
+                $$.label = $1.label;
+                $$.traducao = $3.traducao + "\t" + $1.label + " = " + $3.label + ";\n";
+            }
+            ;
+        
 
 EXP         : EXP '+' TERMO 
             { 
@@ -82,11 +91,11 @@ EXP         : EXP '+' TERMO
             { 
                 $$.label = $1.label;
                 $$.traducao = $1.traducao;      
-            }
+            } 
             | TK_ID
             {
                 $$.label = geraNomeTemp();
-                $$.traducao = "\t" + $$.label + ";\n" + "\t" + $$.label + " = " + $1.traducao + ";\n";
+                $$.traducao = "\t" + $$.label + " = " + $1.label + ";\n";
             }
             ;
 
@@ -98,7 +107,7 @@ TERMO       : TERMO '*' FATOR
             }
             | TERMO '/' FATOR 
             { 
-                $$.label =geraNomeTemp();
+                $$.label = geraNomeTemp();
                 $$.traducao = $1.traducao + $3.traducao +
                 "\t" + $$.label + " = " + $1.label + " / " + $3.label + ";\n";
             }
