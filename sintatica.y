@@ -17,23 +17,28 @@ struct atributos
 	string traducao;
 };
 
-struct infos
+typedef struct
 {
-    string nomeVariavel; // célula de memória que vamos armazenar, inicializando la no c
-    string tipoVar;  // tipo da célula, muda a representação dependendo do tipo
+    string nomeVariavel; // nome no código fonte
+    string tipoVar;  // int, float, double
+    string label; // tipo registrador
 
-    // oq mais precisamos aq p guardar na tabela de símbolos?
-};
+} infos;
 
 int yylex(void);
 void yyerror(string);
 
-set<string> temporarias;
+set<pair<string,string>> temporarias;
 
-string  geraNomeTemp();
+vector<infos> tabelaSimbolos;
+
+string  geraNomeTemp(string tipo);
+
+
 %}
 
-%token TK_NUM TK_ID
+%token TK_INT TK_ID TK_FLOAT
+%token TK_TIPO TK_DOISP
 %token FIM_LINHA
 %start START
 
@@ -44,7 +49,7 @@ START 	    :  CMDS
             {   
                 string declaracoes = "";
                 for(auto i: temporarias){
-                    declaracoes += "\tint " + i + ";\n";
+                    declaracoes += "\t" + i.second + " " + i.first + ";\n";
                 }
                 cout << declaracoes << endl << $1.traducao << endl;
             }
@@ -67,9 +72,10 @@ CMD         : EXP FIM_LINHA { $$.traducao = $1.traducao; }
             | EXP           { $$.traducao = $1.traducao; }
             ;
 
+
 ATR         : TK_ID '=' EXP
             {
-                $$.label = $1.label;
+                $$.label = $1.label; 
                 $$.traducao = $3.traducao + "\t" + $1.label + " = " + $3.label + ";\n";
             }
             ;
@@ -77,13 +83,13 @@ ATR         : TK_ID '=' EXP
 
 EXP         : EXP '+' TERMO 
             { 
-                $$.label = geraNomeTemp();
+                $$.label = geraNomeTemp("int");
                 $$.traducao = $1.traducao + $3.traducao + "\t" + 
                 $$.label + " = " + $1.label + " + " + $3.label + ";\n";
             }
             | EXP '-' TERMO 
             { 
-                $$.label = geraNomeTemp();
+                $$.label = geraNomeTemp("int");
                 $$.traducao = $1.traducao + $3.traducao +
                 "\t" + $$.label + " = " + $1.label + " - " + $3.label + ";\n";
             }
@@ -94,20 +100,20 @@ EXP         : EXP '+' TERMO
             } 
             | TK_ID
             {
-                $$.label = geraNomeTemp();
+                $$.label = geraNomeTemp("int");
                 $$.traducao = "\t" + $$.label + " = " + $1.label + ";\n";
             }
             ;
 
 TERMO       : TERMO '*' FATOR 
             { 
-                $$.label = geraNomeTemp();
+                $$.label = geraNomeTemp("int");
                 $$.traducao = $1.traducao + $3.traducao +
                 "\t" + $$.label + " = " + $1.label + " * " + $3.label + ";\n";
             }
             | TERMO '/' FATOR 
             { 
-                $$.label = geraNomeTemp();
+                $$.label = geraNomeTemp("int");
                 $$.traducao = $1.traducao + $3.traducao +
                 "\t" + $$.label + " = " + $1.label + " / " + $3.label + ";\n";
             }
@@ -123,11 +129,17 @@ FATOR       : '(' EXP ')'
                 $$.label = $2.label;
                 $$.traducao = $2.traducao;
             }
-            | TK_NUM         // só aqui que a gente gera declaração
+            | TK_INT
             { 
-                $$.label = geraNomeTemp();
+                $$.label = geraNomeTemp("int");
                 $$.traducao = "\t" + $$.label + " = " + $1.traducao + ";\n"; 
             }
+            | TK_FLOAT
+            {
+                $$.label = geraNomeTemp("float");
+                $$.traducao = "\t" + $$.label + " = " + $1.traducao + ";\n"; 
+            }
+
             ;
 
 %%
@@ -136,16 +148,32 @@ FATOR       : '(' EXP ')'
 
 int yyparse();
 
-string geraNomeTemp(){
+string geraNomeTemp(string tipo)
+{
     
     qntdVariaveisTemp++;
-    temporarias.insert("T" + to_string(qntdVariaveisTemp));
+
+    if(tipo == "int")
+    {
+        temporarias.insert({"T" + to_string(qntdVariaveisTemp), "int"});
+    }
+    else if(tipo == "float")
+    {
+        temporarias.insert({"T" + to_string(qntdVariaveisTemp), "float"});
+    }
+
     return "T" + to_string(qntdVariaveisTemp);
+}
+
+void insereTabelaSimbolos(string nome, string tipo, string label)
+{
+    infos temp = {nome, tipo, label};
+    tabelaSimbolos.push_back(temp);
 }
 
 int main( int argc, char* argv[] )
 {   
-    set<string> temporarias;
+    set<pair<string,string>> temporarias;
     int qntdVariaveisTemp = 0;
     int linhas = 0;
 
