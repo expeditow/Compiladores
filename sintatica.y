@@ -20,26 +20,30 @@ struct atributos
 typedef struct
 {
     string nomeVariavel; // nome no código fonte
-    string tipoVar;  // int, float, double
+    string tipoVariavel;  // int, float, double
     string label; // tipo registrador
 
-} infos;
+} TIPO_SIMBOLO;
 
 int yylex(void);
 void yyerror(string);
 
 set<pair<string,string>> temporarias;
 
-vector<infos> tabelaSimbolos;
+vector<TIPO_SIMBOLO> tabelaSimbolos;
 
-string  geraNomeTemp(string tipo);
+bool verificaTabelaSimbolos(string nome);
+TIPO_SIMBOLO getVariavelTabelaSimbolos(string nome);
+void printTabelaSimbolos();
+
+string geraNomeTemp(string tipo);
 
 
 %}
 
-%token TK_INT TK_ID TK_FLOAT
-%token TK_TIPO TK_DOISP
+%token TK_INT TK_ID TK_FLOAT TK_TIPO
 %token FIM_LINHA
+
 %start START
 
 
@@ -66,17 +70,36 @@ CMDS        : CMD CMDS
             }
             ;
 
-CMD         : EXP FIM_LINHA { $$.traducao = $1.traducao; }
-            | FIM_LINHA     { $$.traducao = "";          }
-            | ATR           { $$.traducao = $1.traducao; }
-            | EXP           { $$.traducao = $1.traducao; }
+CMD         : EXP FIM_LINHA  { $$.traducao = $1.traducao; }
+            | DECL           { $$.traducao = $1.traducao; }
+            | DECL FIM_LINHA { $$.traducao = $1.traducao; }
+            | ATR            { $$.traducao = $1.traducao; }
+            | EXP            { $$.traducao = $1.traducao; }
+            | FIM_LINHA      { $$.traducao = "";          }
             ;
 
 
+DECL        : TK_TIPO TK_ID 
+            {
+                TIPO_SIMBOLO temp;
+                temp.nomeVariavel = $2.label;
+                temp.tipoVariavel = $1.label;
+                temp.label = geraNomeTemp($1.label);
+                tabelaSimbolos.push_back(temp);
+            }
+            ;
+
 ATR         : TK_ID '=' EXP
             {
-                $$.label = $1.label; 
-                $$.traducao = $3.traducao + "\t" + $1.label + " = " + $3.label + ";\n";
+                TIPO_SIMBOLO temp;
+
+                if(!verificaTabelaSimbolos($1.label))
+                    yyerror("Não foi declarado essa variável");
+                else
+                    temp = getVariavelTabelaSimbolos(($1.label));
+
+                $$.label = temp.label;
+                $$.traducao = $3.traducao + "\t" + temp.label + " = " + $3.label + ";\n";
             }
             ;
         
@@ -100,8 +123,16 @@ EXP         : EXP '+' TERMO
             } 
             | TK_ID
             {
-                $$.label = geraNomeTemp("int");
-                $$.traducao = "\t" + $$.label + " = " + $1.label + ";\n";
+                
+                TIPO_SIMBOLO temp;
+
+                if(!verificaTabelaSimbolos($1.label))
+                    yyerror("Não foi inicializado uma das variáveis");
+                else 
+                    temp = getVariavelTabelaSimbolos($1.label);
+                
+                $$.label = temp.label;
+                $$.traducao = "";
             }
             ;
 
@@ -139,7 +170,6 @@ FATOR       : '(' EXP ')'
                 $$.label = geraNomeTemp("float");
                 $$.traducao = "\t" + $$.label + " = " + $1.traducao + ";\n"; 
             }
-
             ;
 
 %%
@@ -161,23 +191,69 @@ string geraNomeTemp(string tipo)
     {
         temporarias.insert({"T" + to_string(qntdVariaveisTemp), "float"});
     }
+    else // caso em que n tenha nenhum tipo atribuído
+    {
+        temporarias.insert({"T" + to_string(qntdVariaveisTemp), "void"});
+    }
 
     return "T" + to_string(qntdVariaveisTemp);
 }
 
-void insereTabelaSimbolos(string nome, string tipo, string label)
-{
-    infos temp = {nome, tipo, label};
+/*string insereTabelaSimbolos(string nome)    // vai retonar a variável temporária atribuída
+{   
+    string labelTemp = geraNomeTemp("");
     tabelaSimbolos.push_back(temp);
+    return geraNomeTemp("");
+}*/
+
+bool verificaTabelaSimbolos(string nome)
+{
+    bool encontrei = false;
+    TIPO_SIMBOLO temp;
+
+    for(int i = 0; i < tabelaSimbolos.size(); i++)
+    {
+        if(tabelaSimbolos[i].nomeVariavel == nome)
+        {
+            encontrei = true;
+            temp = tabelaSimbolos[i];
+        }
+    }
+
+    return encontrei;
+}
+TIPO_SIMBOLO getVariavelTabelaSimbolos(string nome)
+{
+
+    TIPO_SIMBOLO temp;
+    for(int i = 0; i < tabelaSimbolos.size(); i++)
+    {
+        if(tabelaSimbolos[i].nomeVariavel == nome)
+        {
+            temp = tabelaSimbolos[i];
+        }
+    }
+
+    return temp;
+}
+void printTabelaSimbolos()
+{
+    for(int i = 0; i < tabelaSimbolos.size(); i++)
+    {
+        cout << "Simbolo [" <<  i+1 << "] : " <<  tabelaSimbolos[i].nomeVariavel << " " 
+        << tabelaSimbolos[i].tipoVariavel << " " << tabelaSimbolos[i].label << endl;
+
+    }
+    cout << endl;
 }
 
 int main( int argc, char* argv[] )
 {   
-    set<pair<string,string>> temporarias;
     int qntdVariaveisTemp = 0;
-    int linhas = 0;
 
 	yyparse();
+
+    //printTabelaSimbolos(); - fins depurativos
 
 	return 0;
 }

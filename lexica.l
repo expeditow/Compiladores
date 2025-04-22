@@ -15,6 +15,7 @@ ID {LETRA}({LETRA}|{NUM})*
 
 
 {DELIM} 	{}
+
 "\n"        { return FIM_LINHA;}
 
 [(){}[\];,]	{ return *yytext; }
@@ -22,12 +23,14 @@ ID {LETRA}({LETRA}|{NUM})*
 [+\-*/]		{ return *yytext; }
 
 "="         { return *yytext;}
-":"         { return *yytext; }
+
+int         { yylval.label = yytext; return TK_TIPO; }
 
 
 
 {NUM}		{ yylval.traducao = yytext; return TK_INT;  }
 {REAL}		{ yylval.traducao = yytext; return TK_FLOAT;}
+
 {ID}		{ yylval.label = yytext; return TK_ID; }
 
 
