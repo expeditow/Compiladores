@@ -105,9 +105,9 @@ vector<TIPO_SIMBOLO> tabelaSimbolos;
 bool verificaTabelaSimbolos(string nome);
 TIPO_SIMBOLO getVariavelTabelaSimbolos(string nome);
 void printTabelaSimbolos();
-
+string insereTabelaSimbolos(string nome, string tipo);
 string geraNomeTemp(string tipo);
-
+string getTipo(string tipo);
 
 
 #line 114 "y.tab.c"
@@ -603,8 +603,8 @@ static const yytype_int8 yytranslate[] =
 static const yytype_uint8 yyrline[] =
 {
        0,    52,    52,    60,    63,    68,    73,    74,    75,    76,
-      77,    78,    82,    92,   107,   113,   119,   124,   139,   145,
-     151,   158,   163,   168
+      77,    78,    82,    90,   105,   111,   117,   122,   137,   143,
+     149,   156,   161,   166
 };
 #endif
 
@@ -1217,7 +1217,7 @@ yyreduce:
 
   case 7: /* CMD: DECL  */
 #line 74 "sintatica.y"
-                             { yyval.traducao = ""; }
+                             { yyval.traducao = yyvsp[0].traducao; }
 #line 1222 "y.tab.c"
     break;
 
@@ -1248,17 +1248,15 @@ yyreduce:
   case 12: /* DECL: TK_TIPO TK_ID  */
 #line 83 "sintatica.y"
             {
-                TIPO_SIMBOLO temp;
-                temp.nomeVariavel = yyvsp[0].label;
-                temp.tipoVariavel = yyvsp[-1].label;
-                temp.label = geraNomeTemp(yyvsp[-1].label);
-                tabelaSimbolos.push_back(temp);
+                string vazia = insereTabelaSimbolos(yyvsp[0].label, yyvsp[-1].label);
+                // só pq eu meio q obrigo a função a retornar
+                // p casos de variáveis temporárias
             }
-#line 1258 "y.tab.c"
+#line 1256 "y.tab.c"
     break;
 
   case 13: /* ATR: TK_ID '=' EXP  */
-#line 93 "sintatica.y"
+#line 91 "sintatica.y"
             {
                 TIPO_SIMBOLO temp;
 
@@ -1268,42 +1266,42 @@ yyreduce:
                     temp = getVariavelTabelaSimbolos((yyvsp[-2].label));
 
                 yyval.label = temp.label;
-                yyval.traducao = yyvsp[0].traducao + "\t" + temp.label + " = " + yyvsp[0].label + ";\n";
+                yyval.traducao = yyvsp[0].traducao + "\t" + temp.nomeVariavel + " = " + yyvsp[0].label + ";\n";
             }
-#line 1274 "y.tab.c"
+#line 1272 "y.tab.c"
     break;
 
   case 14: /* EXP: EXP '+' TERMO  */
-#line 108 "sintatica.y"
+#line 106 "sintatica.y"
             { 
-                yyval.label = geraNomeTemp("int");
+                yyval.label = insereTabelaSimbolos("", "");
                 yyval.traducao = yyvsp[-2].traducao + yyvsp[0].traducao + "\t" + 
                 yyval.label + " = " + yyvsp[-2].label + " + " + yyvsp[0].label + ";\n";
             }
-#line 1284 "y.tab.c"
+#line 1282 "y.tab.c"
     break;
 
   case 15: /* EXP: EXP '-' TERMO  */
-#line 114 "sintatica.y"
+#line 112 "sintatica.y"
             { 
-                yyval.label = geraNomeTemp("int");
+                yyval.label = insereTabelaSimbolos("", "");
                 yyval.traducao = yyvsp[-2].traducao + yyvsp[0].traducao +
                 "\t" + yyval.label + " = " + yyvsp[-2].label + " - " + yyvsp[0].label + ";\n";
             }
-#line 1294 "y.tab.c"
+#line 1292 "y.tab.c"
     break;
 
   case 16: /* EXP: TERMO  */
-#line 120 "sintatica.y"
+#line 118 "sintatica.y"
             { 
                 yyval.label = yyvsp[0].label;
                 yyval.traducao = yyvsp[0].traducao;      
             }
-#line 1303 "y.tab.c"
+#line 1301 "y.tab.c"
     break;
 
   case 17: /* EXP: TK_ID  */
-#line 125 "sintatica.y"
+#line 123 "sintatica.y"
             {
                 
                 TIPO_SIMBOLO temp;
@@ -1316,67 +1314,67 @@ yyreduce:
                 yyval.label = temp.label;
                 yyval.traducao = "";
             }
-#line 1320 "y.tab.c"
+#line 1318 "y.tab.c"
     break;
 
   case 18: /* TERMO: TERMO '*' FATOR  */
-#line 140 "sintatica.y"
+#line 138 "sintatica.y"
             { 
-                yyval.label = geraNomeTemp("int");
+                yyval.label = insereTabelaSimbolos("", "");
                 yyval.traducao = yyvsp[-2].traducao + yyvsp[0].traducao +
                 "\t" + yyval.label + " = " + yyvsp[-2].label + " * " + yyvsp[0].label + ";\n";
             }
-#line 1330 "y.tab.c"
+#line 1328 "y.tab.c"
     break;
 
   case 19: /* TERMO: TERMO '/' FATOR  */
-#line 146 "sintatica.y"
+#line 144 "sintatica.y"
             { 
-                yyval.label = geraNomeTemp("int");
+                yyval.label = insereTabelaSimbolos("", "");
                 yyval.traducao = yyvsp[-2].traducao + yyvsp[0].traducao +
                 "\t" + yyval.label + " = " + yyvsp[-2].label + " / " + yyvsp[0].label + ";\n";
             }
-#line 1340 "y.tab.c"
+#line 1338 "y.tab.c"
     break;
 
   case 20: /* TERMO: FATOR  */
-#line 152 "sintatica.y"
+#line 150 "sintatica.y"
             { 
                 yyval.label = yyvsp[0].label;
                 yyval.traducao = yyvsp[0].traducao; 
             }
-#line 1349 "y.tab.c"
+#line 1347 "y.tab.c"
     break;
 
   case 21: /* FATOR: '(' EXP ')'  */
-#line 159 "sintatica.y"
+#line 157 "sintatica.y"
             { 
                 yyval.label = yyvsp[-1].label;
                 yyval.traducao = yyvsp[-1].traducao;
             }
-#line 1358 "y.tab.c"
+#line 1356 "y.tab.c"
     break;
 
   case 22: /* FATOR: TK_INT  */
-#line 164 "sintatica.y"
+#line 162 "sintatica.y"
             { 
-                yyval.label = geraNomeTemp("int");
+                yyval.label = insereTabelaSimbolos("", "nmr");
                 yyval.traducao = "\t" + yyval.label + " = " + yyvsp[0].traducao + ";\n"; 
             }
-#line 1367 "y.tab.c"
+#line 1365 "y.tab.c"
     break;
 
   case 23: /* FATOR: TK_FLOAT  */
-#line 169 "sintatica.y"
+#line 167 "sintatica.y"
             {
-                yyval.label = geraNomeTemp("float");
+                yyval.label = insereTabelaSimbolos("", "ncv");
                 yyval.traducao = "\t" + yyval.label + " = " + yyvsp[0].traducao + ";\n"; 
             }
-#line 1376 "y.tab.c"
+#line 1374 "y.tab.c"
     break;
 
 
-#line 1380 "y.tab.c"
+#line 1378 "y.tab.c"
 
       default: break;
     }
@@ -1569,7 +1567,7 @@ yyreturnlab:
   return yyresult;
 }
 
-#line 175 "sintatica.y"
+#line 173 "sintatica.y"
 
 
 #include "lex.yy.c"
@@ -1581,28 +1579,37 @@ string geraNomeTemp(string tipo)
     
     qntdVariaveisTemp++;
 
-    if(tipo == "int")
-    {
+    if(tipo == "nmr")
         temporarias.insert({"T" + to_string(qntdVariaveisTemp), "int"});
-    }
-    else if(tipo == "float")
-    {
+    else if(tipo == "ncv")
         temporarias.insert({"T" + to_string(qntdVariaveisTemp), "float"});
-    }
-    else // caso em que n tenha nenhum tipo atribuído
-    {
-        temporarias.insert({"T" + to_string(qntdVariaveisTemp), "void"});
-    }
-
+    else // caso em que n tenha nenhum tipo atribuído - vamos inicializar "vazio"
+        temporarias.insert({"T" + to_string(qntdVariaveisTemp), "null"});
+    
     return "T" + to_string(qntdVariaveisTemp);
 }
 
-/*string insereTabelaSimbolos(string nome)    // vai retonar a variável temporária atribuída
+string insereTabelaSimbolos(string nome, string tipo)    // Vai retonar ao registrador assoaciado a variável
 {   
-    string labelTemp = geraNomeTemp("");
+    TIPO_SIMBOLO temp;
+
+    if(nome == "") // Caso de temporários
+    {
+        temp.nomeVariavel = geraNomeTemp(tipo);
+        temp.tipoVariavel = getTipo(tipo); // Necessariamente precisa ser isso, pois, ele trata dos nomes que escolhemos na nossa linguagem
+        temp.label = temp.nomeVariavel;
+    }
+    else // Caso de variáveis declaradas
+    {
+        temp.nomeVariavel = nome;
+        temp.tipoVariavel = getTipo(tipo);
+        temp.label = geraNomeTemp(tipo);
+    }
+
     tabelaSimbolos.push_back(temp);
-    return geraNomeTemp("");
-}*/
+
+    return temp.label;
+}
 
 bool verificaTabelaSimbolos(string nome)
 {
@@ -1638,11 +1645,20 @@ void printTabelaSimbolos()
 {
     for(int i = 0; i < tabelaSimbolos.size(); i++)
     {
-        cout << "Simbolo [" <<  i+1 << "] : " <<  tabelaSimbolos[i].nomeVariavel << " " 
-        << tabelaSimbolos[i].tipoVariavel << " " << tabelaSimbolos[i].label << endl;
+        cout << "Simbolo [" <<  i+1 << "] : nome: " <<  tabelaSimbolos[i].nomeVariavel << " tipo: " 
+        << tabelaSimbolos[i].tipoVariavel << " label: " << tabelaSimbolos[i].label << endl;
 
     }
     cout << endl;
+}
+string getTipo(string tipo)
+{
+    if(tipo == "nmr")
+        return "int";
+    else if(tipo == "ncv")
+        return "float";
+    else 
+        return "null";    
 }
 
 int main( int argc, char* argv[] )
@@ -1651,7 +1667,7 @@ int main( int argc, char* argv[] )
 
 	yyparse();
 
-    //printTabelaSimbolos(); - fins depurativos
+    printTabelaSimbolos(); // - fins depurativos
 
 	return 0;
 }

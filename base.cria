@@ -1,2 +1,2 @@
-int A
+nmr A
 A = (A + 2) * 3

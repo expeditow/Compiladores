@@ -24,7 +24,7 @@ ID {LETRA}({LETRA}|{NUM})*
 
 "="         { return *yytext;}
 
-int         { yylval.label = yytext; return TK_TIPO; }
+"nmr"         { yylval.label = yytext; return TK_TIPO; }
 
 
 
