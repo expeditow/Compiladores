@@ -8,13 +8,14 @@
 
 using namespace std;
 
-int qntdVariaveisTemp;
+int qntdVariaveisTemp = 0;
 int linhas;
 
-struct atributos
+struct atributos // Atributos aqui é cada nó da árvore, cada nó possui:
 {
-	string label;
-	string traducao;
+	string label;       // A variável temporária atribuída
+	string traducao;    // A tradução em código intermediário
+    string tipo;        // O tipo, p casos de operações que precisamos criar uma nova label
 };
 
 typedef struct
@@ -38,6 +39,7 @@ void printTabelaSimbolos();
 string insereTabelaSimbolos(string nome, string tipo);
 string geraNomeTemp(string tipo);
 string getTipo(string tipo);
+string infereTipo(string tipo1, string tipo2);
 
 %}
 
@@ -103,21 +105,24 @@ ATR         : TK_ID '=' EXP
         
 
 EXP         : EXP '+' TERMO 
-            { 
-                $$.label = insereTabelaSimbolos("", "");
+            {   
+                $$.tipo = infereTipo($1.tipo, $3.tipo);
+                $$.label = insereTabelaSimbolos("", $$.tipo);
                 $$.traducao = $1.traducao + $3.traducao + "\t" + 
                 $$.label + " = " + $1.label + " + " + $3.label + ";\n";
             }
             | EXP '-' TERMO 
-            { 
-                $$.label = insereTabelaSimbolos("", "");
+            {   
+                $$.tipo = infereTipo($1.tipo, $3.tipo);
+                $$.label = insereTabelaSimbolos("", $$.tipo);
                 $$.traducao = $1.traducao + $3.traducao +
                 "\t" + $$.label + " = " + $1.label + " - " + $3.label + ";\n";
             }
             | TERMO         
             { 
                 $$.label = $1.label;
-                $$.traducao = $1.traducao;      
+                $$.traducao = $1.traducao;
+                $$.tipo = $1.tipo;      
             } 
             | TK_ID
             {
@@ -131,18 +136,21 @@ EXP         : EXP '+' TERMO
                 
                 $$.label = temp.label;
                 $$.traducao = "";
+                $$.tipo = temp.tipoVariavel;
             }
             ;
 
 TERMO       : TERMO '*' FATOR 
-            { 
-                $$.label = insereTabelaSimbolos("", "");
+            {   
+                $$.tipo = infereTipo($1.tipo, $3.tipo);
+                $$.label = insereTabelaSimbolos("",  $$.tipo);
                 $$.traducao = $1.traducao + $3.traducao +
                 "\t" + $$.label + " = " + $1.label + " * " + $3.label + ";\n";
             }
             | TERMO '/' FATOR 
             { 
-                $$.label = insereTabelaSimbolos("", "");
+                $$.tipo = infereTipo($1.tipo, $3.tipo);
+                $$.label = insereTabelaSimbolos("",  $$.tipo);
                 $$.traducao = $1.traducao + $3.traducao +
                 "\t" + $$.label + " = " + $1.label + " / " + $3.label + ";\n";
             }
@@ -150,6 +158,7 @@ TERMO       : TERMO '*' FATOR
             { 
                 $$.label = $1.label;
                 $$.traducao = $1.traducao; 
+                $$.tipo = $1.tipo;
             }
             ;
 
@@ -157,16 +166,19 @@ FATOR       : '(' EXP ')'
             { 
                 $$.label = $2.label;
                 $$.traducao = $2.traducao;
+                $$.tipo = $2.tipo;
             }
             | TK_INT
             { 
                 $$.label = insereTabelaSimbolos("", "nmr");
-                $$.traducao = "\t" + $$.label + " = " + $1.traducao + ";\n"; 
+                $$.traducao = "\t" + $$.label + " = " + $1.traducao + ";\n";
+                $$.tipo = "int"; 
             }
             | TK_FLOAT
             {
                 $$.label = insereTabelaSimbolos("", "ncv");
                 $$.traducao = "\t" + $$.label + " = " + $1.traducao + ";\n"; 
+                $$.tipo = "float"; 
             }
             ;
 
@@ -176,22 +188,24 @@ FATOR       : '(' EXP ')'
 
 int yyparse();
 
-string geraNomeTemp(string tipo)
+// Função para geração de variáveis temporárias
+string geraNomeTemp(string tipo) 
 {
     
     qntdVariaveisTemp++;
 
-    if(tipo == "nmr")
+    if(tipo == "nmr" || tipo == "int")
         temporarias.insert({"T" + to_string(qntdVariaveisTemp), "int"});
-    else if(tipo == "ncv")
+    else if(tipo == "ncv" || tipo == "float")
         temporarias.insert({"T" + to_string(qntdVariaveisTemp), "float"});
-    else // caso em que n tenha nenhum tipo atribuído - vamos inicializar "vazio"
+    else // caso em que n tenha nenhum tipo atribuído - vamos inicializar "vazio" - ou em dinâmico
         temporarias.insert({"T" + to_string(qntdVariaveisTemp), "null"});
     
     return "T" + to_string(qntdVariaveisTemp);
 }
 
-string insereTabelaSimbolos(string nome, string tipo)    // Vai retonar ao registrador assoaciado a variável
+// Vai retonar ao registrador assoaciado a variável
+string insereTabelaSimbolos(string nome, string tipo)
 {   
     TIPO_SIMBOLO temp;
 
@@ -213,6 +227,7 @@ string insereTabelaSimbolos(string nome, string tipo)    // Vai retonar ao regis
     return temp.label;
 }
 
+// Função para verificar se existe na tabela de símbolos
 bool verificaTabelaSimbolos(string nome)
 {
     bool encontrei = false;
@@ -229,6 +244,8 @@ bool verificaTabelaSimbolos(string nome)
 
     return encontrei;
 }
+
+// Só para pegar a variável na tabela de símbolos, tenho que setar em um caso onde não tenha
 TIPO_SIMBOLO getVariavelTabelaSimbolos(string nome)
 {
 
@@ -243,6 +260,8 @@ TIPO_SIMBOLO getVariavelTabelaSimbolos(string nome)
 
     return temp;
 }
+
+// Função para printar 
 void printTabelaSimbolos()
 {
     for(int i = 0; i < tabelaSimbolos.size(); i++)
@@ -253,22 +272,28 @@ void printTabelaSimbolos()
     }
     cout << endl;
 }
-string getTipo(string tipo)
+
+// Função para converter tipo
+string getTipo(string tipo) 
 {
-    if(tipo == "nmr")
+    if(tipo == "nmr" || tipo == "int")
         return "int";
-    else if(tipo == "ncv")
+    else if(tipo == "ncv" || tipo == "float")
         return "float";
     else 
         return "null";    
 }
 
+string infereTipo(string tipo1, string tipo2)
+{
+    if(tipo1 == "int" && tipo1 == tipo2) return "int";
+    else return "float";
+}
+
 int main( int argc, char* argv[] )
 {   
-    int qntdVariaveisTemp = 0;
 
-	yyparse();
-
+    yyparse();
     printTabelaSimbolos(); // - fins depurativos
 
 	return 0;
@@ -279,3 +304,11 @@ void yyerror( string MSG )
 	cout << MSG << endl;
 	exit (0);
 }				
+
+/*
+Pontos legais de se fazer -> separar duas funções p inserir na tabela de símbolos
+    - variáveis declaradas
+    - variáveis temporárias
+
+Criar variáveis para facilitar leitura de algumas definições nossa na linguagem - no nosso código aqui no caso
+*/

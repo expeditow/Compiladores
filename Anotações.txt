@@ -39,3 +39,5 @@ T5 = T4 * T3;
 T1 = T5;
 
 OBS: É possível adicionar comentários ao código gerado para facilitar a depuração.
+
+Essa parte agora foi mais para a persistência de tipos pelos nós
