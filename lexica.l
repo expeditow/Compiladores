@@ -24,13 +24,18 @@ ID {LETRA}({LETRA}|{NUM})*
 
 "="         { return *yytext;}
 
-"nmr"         { yylval.label = yytext; return TK_TIPO; }
+"nmr"       { yylval.label = yytext; return TK_TIPO; }
+"ncv"       { yylval.label = yytext; return TK_TIPO; }
+"pp"        { yylval.label = yytext; return TK_TIPO; }
+"letra"     { yylval.label = yytext; return TK_TIPO; }     
 
 
-
-{NUM}		{ yylval.traducao = yytext; return TK_INT;  }
+\'[^\\']\'  { yylval.traducao = yytext; return TK_CHAR; }
+{NUM}		{ yylval.traducao = yytext; return TK_INT; }
 {REAL}		{ yylval.traducao = yytext; return TK_FLOAT;}
 
+"reto"      {yylval.label = yytext; return TK_BOOLEAN; }
+"torto"     {yylval.label = yytext; return TK_BOOLEAN; }
 {ID}		{ yylval.label = yytext; return TK_ID; }
 
 

@@ -40,10 +40,16 @@ string insereTabelaSimbolos(string nome, string tipo);
 string geraNomeTemp(string tipo);
 string getTipo(string tipo);
 string infereTipo(string tipo1, string tipo2);
+string getBooleano(string valor);
+
+
+#define true 1
+#define false 0
 
 %}
 
-%token TK_INT TK_ID TK_FLOAT TK_TIPO
+%token TK_TIPO TK_ID
+%token TK_INT TK_FLOAT TK_BOOLEAN TK_CHAR
 %token FIM_LINHA
 
 %start START
@@ -53,11 +59,12 @@ string infereTipo(string tipo1, string tipo2);
 
 START 	    :  CMDS
             {   
+                string defines = "\t#define true 1\n\t#define false 0\n\n\n";
                 string declaracoes = "";
                 for(auto i: temporarias){
                     declaracoes += "\t" + i.second + " " + i.first + ";\n";
                 }
-                cout << declaracoes << endl << $1.traducao << endl;
+                cout << defines << declaracoes << endl << $1.traducao << endl;
             }
             |
             ;
@@ -99,7 +106,7 @@ ATR         : TK_ID '=' EXP
                     temp = getVariavelTabelaSimbolos(($1.label));
 
                 $$.label = temp.label;
-                $$.traducao = $3.traducao + "\t" + temp.nomeVariavel + " = " + $3.label + ";\n";
+                $$.traducao = $3.traducao + "\t" + temp.label + " = " + $3.label + ";\n";
             }
             ;
         
@@ -180,6 +187,22 @@ FATOR       : '(' EXP ')'
                 $$.traducao = "\t" + $$.label + " = " + $1.traducao + ";\n"; 
                 $$.tipo = "float"; 
             }
+            | TK_BOOLEAN
+            {
+                $$.label = insereTabelaSimbolos("", "pp");
+                string valor = getBooleano($1.label);
+
+                if(valor == "error") yyerror("Valor atribuído de forma errada!");
+
+                $$.traducao = "\t" + $$.label + " = " + valor + ";\n";
+                $$.tipo = "bool"; 
+            }
+            | TK_CHAR
+            {
+                $$.label = insereTabelaSimbolos("", "letra");
+                $$.traducao = "\t" + $$.label + " = " + $1.traducao + ";\n";
+                $$.tipo = "char"; 
+            }
             ;
 
 %%
@@ -189,7 +212,7 @@ FATOR       : '(' EXP ')'
 int yyparse();
 
 // Função para geração de variáveis temporárias
-string geraNomeTemp(string tipo) 
+string geraNomeTemp(string tipo)  // Dá para melhorar essa função
 {
     
     qntdVariaveisTemp++;
@@ -198,6 +221,10 @@ string geraNomeTemp(string tipo)
         temporarias.insert({"T" + to_string(qntdVariaveisTemp), "int"});
     else if(tipo == "ncv" || tipo == "float")
         temporarias.insert({"T" + to_string(qntdVariaveisTemp), "float"});
+    else if(tipo == "pp" || tipo == "bool")
+        temporarias.insert({"T" + to_string(qntdVariaveisTemp), "int"});
+    else if(tipo == "letra" || tipo == "char")
+        temporarias.insert({"T" + to_string(qntdVariaveisTemp), "char"});
     else // caso em que n tenha nenhum tipo atribuído - vamos inicializar "vazio" - ou em dinâmico
         temporarias.insert({"T" + to_string(qntdVariaveisTemp), "null"});
     
@@ -231,17 +258,11 @@ string insereTabelaSimbolos(string nome, string tipo)
 bool verificaTabelaSimbolos(string nome)
 {
     bool encontrei = false;
-    TIPO_SIMBOLO temp;
 
     for(int i = 0; i < tabelaSimbolos.size(); i++)
-    {
         if(tabelaSimbolos[i].nomeVariavel == nome)
-        {
             encontrei = true;
-            temp = tabelaSimbolos[i];
-        }
-    }
-
+    
     return encontrei;
 }
 
@@ -280,6 +301,10 @@ string getTipo(string tipo)
         return "int";
     else if(tipo == "ncv" || tipo == "float")
         return "float";
+    else if(tipo == "letra" || tipo == "char")
+        return "char";
+    else if(tipo == "pp" || tipo == "bool")
+        return "int";
     else 
         return "null";    
 }
@@ -288,6 +313,13 @@ string infereTipo(string tipo1, string tipo2)
 {
     if(tipo1 == "int" && tipo1 == tipo2) return "int";
     else return "float";
+}
+
+string getBooleano(string valor)
+{
+    if(valor == "reto") return "true";
+    else if(valor == "torto") return "false";
+    else return "error"; // erro
 }
 
 int main( int argc, char* argv[] )
@@ -306,9 +338,17 @@ void yyerror( string MSG )
 }				
 
 /*
+
 Pontos legais de se fazer -> separar duas funções p inserir na tabela de símbolos
     - variáveis declaradas
     - variáveis temporárias
 
 Criar variáveis para facilitar leitura de algumas definições nossa na linguagem - no nosso código aqui no caso
+
+Testar se o valor atribuído a um id, bate com o seu valor
+
+Organizar e nomear melhor funções
+Refatorar o uso de strings mágicas
+
+Garantir que os tipos só podem receber coisas deles mesmos, ou tem que fazer conversão algo assim
 */
