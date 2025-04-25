@@ -1,2 +1,4 @@
-pp B
-B = 5 < 3 == 5
+pp B1
+pp B2
+pp R
+R = B1 || !B2

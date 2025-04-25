@@ -19,9 +19,14 @@ ID {LETRA}({LETRA}|{NUM})*
 "\n"        { return FIM_LINHA;}
 
 [(){}[\];,]	{ return *yytext; }
-
 [+\-*/]		{ return *yytext; }
 
+"elog"      { return TK_E_LOGICO; }
+"&&"        { return TK_E_LOGICO; }
+"oulog"     { return TK_OU_LOGICO; }
+"||"        { return TK_OU_LOGICO; }
+"nao"       { return TK_NEGACAO; }
+"!"         { return TK_NEGACAO; }
 
 "="         { return *yytext; }
 [><!]       { return *yytext; }
@@ -37,8 +42,11 @@ ID {LETRA}({LETRA}|{NUM})*
 
 
 \'[^\\']\'  { yylval.traducao = yytext; return TK_CHAR; }
-{NUM}		{ yylval.traducao = yytext; return TK_INT; }
+
 {REAL}		{ yylval.traducao = yytext; return TK_FLOAT;}
+{NUM}		{ yylval.traducao = yytext; return TK_INT; }
+
+
 
 "reto"      {yylval.label = yytext; return TK_BOOLEAN; }
 "torto"     {yylval.label = yytext; return TK_BOOLEAN; }

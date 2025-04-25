@@ -50,7 +50,7 @@ string getBooleano(string valor);
 
 %token TK_TIPO TK_ID
 %token TK_INT TK_FLOAT TK_BOOLEAN TK_CHAR
-%token TK_MAIOR_IGUAL TK_MENOR_IGUAL TK_DIFERENTE TK_IGUAL
+%token TK_MAIOR_IGUAL TK_MENOR_IGUAL TK_DIFERENTE TK_IGUAL TK_E_LOGICO TK_OU_LOGICO TK_NEGACAO
 %token FIM_LINHA
 
 %start START
@@ -168,6 +168,20 @@ EXP         : EXP '+' TERMO
                 $$.traducao = $1.traducao + $3.traducao +
                 "\t" + $$.label + " = " + $1.label + " == " + $3.label + ";\n";           
             }
+            | EXP TK_E_LOGICO TERMO 
+            {
+                $$.tipo = "bool";
+                $$.label = insereTabelaSimbolos("", $$.tipo);
+                $$.traducao = $1.traducao + $3.traducao +
+                "\t" + $$.label + " = " + $1.label + " && " + $3.label + ";\n";  
+            }
+            | EXP TK_OU_LOGICO TERMO 
+            {
+                $$.tipo = "bool";
+                $$.label = insereTabelaSimbolos("", $$.tipo);
+                $$.traducao = $1.traducao + $3.traducao +
+                "\t" + $$.label + " = " + $1.label + " || " + $3.label + ";\n";  
+            }
             | TERMO         
             { 
                 $$.label = $1.label;
@@ -217,6 +231,32 @@ FATOR       : '(' EXP ')'
                 $$.label = $2.label;
                 $$.traducao = $2.traducao;
                 $$.tipo = $2.tipo;
+            }
+            | TK_ID
+            {
+                TIPO_SIMBOLO temp;
+
+                if(!verificaTabelaSimbolos($1.label))
+                    yyerror("Não foi inicializado uma das variáveis");
+                else 
+                    temp = getVariavelTabelaSimbolos($1.label);
+                
+                $$.label = temp.label;
+                $$.traducao = "";
+                $$.tipo = temp.tipoVariavel;
+            }
+            | TK_NEGACAO TK_ID
+            {
+                 $$.tipo = "bool";
+
+                TIPO_SIMBOLO temp;
+                if(!verificaTabelaSimbolos($2.label))
+                    yyerror("Não foi inicializado uma das variáveis");
+                else 
+                    temp = getVariavelTabelaSimbolos($2.label);
+
+                $$.label = insereTabelaSimbolos("", $$.tipo);
+                 $$.traducao = "\t" + $$.label + " = !" + temp.label + ";\n";
             }
             | TK_INT
             { 
@@ -382,7 +422,9 @@ void yyerror( string MSG )
 
 /*
 
-Pontos legais de se fazer -> separar duas funções p inserir na tabela de símbolos
+Pontos legais de se fazer após ter a base da linguagem (toda a etapa 1)
+
+    - separar duas funções p inserir na tabela de símbolos
     - variáveis declaradas
     - variáveis temporárias
 
@@ -396,4 +438,13 @@ Refatorar o uso de strings mágicas
 Garantir que os tipos só podem receber coisas deles mesmos, ou tem que fazer conversão algo assim
 
 Tratar a prioridade nos operadores lógicos
+
+Garantir que os operadores lógicos só atuem entre os booleanos na minha linguagem - RELACIONAIS E LÓGICOS
+    - Logicamente que vou ter que tratar mais exceções além dessa
+    - Fazer com que eles não formem expressão também! apenas dois elementos podem ser comparados 
+        - Isso seria interresante
+            - P isso eu acho que daria p criar uma variável no nó que diz quantos elementos estão na expressão
+            - Ai caso o nó que estamos seja um que suporte apenas dois elementos, retornamos erro, seria uma das formas de fazer
+            - Verificar se as variáveis possuem valor também
+
 */

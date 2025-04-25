@@ -18,22 +18,24 @@ Atribuição
 
 
 
-#9 Operadores Relacionais  
-- Permitir expressões com operadores relacionais (`<`, `<=`, `>`, `>=`, `==`, `!=`). O resultado da operação deve ser tratado como valor lógico.
+#10 Operadores Lógicos  
+- Implementar os operadores lógicos `&&`, `||` e `!`. Deve-se verificar a compatibilidade de tipos nas expressões lógicas.
 
 Código na LP:
+bool B1;
+bool B2;
 bool R;
-R = 3 < 5;
+R = B1 && !B2;
 
 Código Intermediário:
 int T1;
 int T2;
 int T3;
 int T4;
+int T5;
 
-T1 = 3;
-T2 = 5;
-T3 = T1 < T2;
-T4 = T3;
+T2 = !T1;
+T4 = T3 && T2;
+T5 = T4;
 
-Preciso tratar de uma possível precedência futuramente
+Novamente, implementei apenas a base preciso consertar a precedência
