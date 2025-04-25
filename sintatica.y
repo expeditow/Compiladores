@@ -50,6 +50,7 @@ string getBooleano(string valor);
 
 %token TK_TIPO TK_ID
 %token TK_INT TK_FLOAT TK_BOOLEAN TK_CHAR
+%token TK_MAIOR_IGUAL TK_MENOR_IGUAL TK_DIFERENTE TK_IGUAL
 %token FIM_LINHA
 
 %start START
@@ -124,6 +125,48 @@ EXP         : EXP '+' TERMO
                 $$.label = insereTabelaSimbolos("", $$.tipo);
                 $$.traducao = $1.traducao + $3.traducao +
                 "\t" + $$.label + " = " + $1.label + " - " + $3.label + ";\n";
+            }
+            | EXP '>' TERMO 
+            {
+                $$.tipo = "bool";
+                $$.label = insereTabelaSimbolos("", $$.tipo);
+                $$.traducao = $1.traducao + $3.traducao +
+                "\t" + $$.label + " = " + $1.label + " > " + $3.label + ";\n";
+            }
+            | EXP '<' TERMO 
+            {
+                $$.tipo = "bool";
+                $$.label = insereTabelaSimbolos("", $$.tipo);
+                $$.traducao = $1.traducao + $3.traducao +
+                "\t" + $$.label + " = " + $1.label + " < " + $3.label + ";\n";
+            }
+            | EXP TK_MAIOR_IGUAL TERMO 
+            {
+                $$.tipo = "bool";
+                $$.label = insereTabelaSimbolos("", $$.tipo);
+                $$.traducao = $1.traducao + $3.traducao +
+                "\t" + $$.label + " = " + $1.label + " >= " + $3.label + ";\n";
+            }
+            | EXP TK_MENOR_IGUAL TERMO 
+            {
+                $$.tipo = "bool";
+                $$.label = insereTabelaSimbolos("", $$.tipo);
+                $$.traducao = $1.traducao + $3.traducao +
+                "\t" + $$.label + " = " + $1.label + "<= " + $3.label + ";\n";
+            }
+            | EXP TK_DIFERENTE TERMO 
+            {
+                $$.tipo = "bool";
+                $$.label = insereTabelaSimbolos("", $$.tipo);
+                $$.traducao = $1.traducao + $3.traducao +
+                "\t" + $$.label + " = " + $1.label + " != " + $3.label + ";\n";           
+            }
+            | EXP TK_IGUAL TERMO 
+            {
+                $$.tipo = "bool";
+                $$.label = insereTabelaSimbolos("", $$.tipo);
+                $$.traducao = $1.traducao + $3.traducao +
+                "\t" + $$.label + " = " + $1.label + " == " + $3.label + ";\n";           
             }
             | TERMO         
             { 
@@ -351,4 +394,6 @@ Organizar e nomear melhor funções
 Refatorar o uso de strings mágicas
 
 Garantir que os tipos só podem receber coisas deles mesmos, ou tem que fazer conversão algo assim
+
+Tratar a prioridade nos operadores lógicos
 */

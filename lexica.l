@@ -22,7 +22,13 @@ ID {LETRA}({LETRA}|{NUM})*
 
 [+\-*/]		{ return *yytext; }
 
-"="         { return *yytext;}
+
+"="         { return *yytext; }
+[><!]       { return *yytext; }
+">="        { return TK_MAIOR_IGUAL; }
+"<="        { return TK_MENOR_IGUAL; }
+"!="        { return TK_DIFERENTE;   }
+"=="        { return TK_IGUAL;       }
 
 "nmr"       { yylval.label = yytext; return TK_TIPO; }
 "ncv"       { yylval.label = yytext; return TK_TIPO; }
