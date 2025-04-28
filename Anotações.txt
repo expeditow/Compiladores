@@ -1,41 +1,25 @@
-ETAPA 1 - entrega
-
-Expressão
-Tipos
-    Boolean
-    Int
-    Float
-    Char
-Conversão
-    Implícita
-    Explícita
-Operadores
-    Lógico
-    Aritmético
-    Relacional
-Variável
-Atribuição
-
-
-
-#10 Operadores Lógicos  
-- Implementar os operadores lógicos `&&`, `||` e `!`. Deve-se verificar a compatibilidade de tipos nas expressões lógicas.
+#11 Conversão Implícita  
+- Deverá ocorrer a conversão automática de `int` para `float` em expressões mistas. Essa conversão deve ser aplicada na geração do código intermediário. Será necessário criar uma tabela de conversão para determinar os tipos resultantes. Estratégias como as usadas em Ada não serão aceitas.
 
 Código na LP:
-bool B1;
-bool B2;
-bool R;
-R = B1 && !B2;
+float F;
+int I;
+F = I + 2.5;
 
 Código Intermediário:
 int T1;
-int T2;
-int T3;
-int T4;
-int T5;
+float T2;
+float T3;
+float T4;
+float T5;
 
-T2 = !T1;
-T4 = T3 && T2;
+T2 = (float) T1;
+T3 = 2.5;
+T4 = T2 + T3;
 T5 = T4;
 
-Novamente, implementei apenas a base preciso consertar a precedência
+OBS: A conversão pode ser validada na análise semântica para evitar operações inválidas.
+
+
+O que acontece é que usamos uma variável substituta p aquela que precisa ser convertida
+é bem simples de implementar isso

@@ -109,20 +109,56 @@ ATR         : TK_ID '=' EXP
                 $$.label = temp.label;
                 $$.traducao = $3.traducao + "\t" + temp.label + " = " + $3.label + ";\n";
             }
-            ;
         
 
 EXP         : EXP '+' TERMO 
             {   
                 $$.tipo = infereTipo($1.tipo, $3.tipo);
                 $$.label = insereTabelaSimbolos("", $$.tipo);
-                $$.traducao = $1.traducao + $3.traducao + "\t" + 
-                $$.label + " = " + $1.label + " + " + $3.label + ";\n";
+
+                if($1.tipo == "int" && $3.tipo == "float") 
+                {
+                    string temporario = insereTabelaSimbolos("","float");
+                    $$.traducao = "\t" + temporario + " = (float) " + $1.label + ";\n" +
+                    "\t" + $$.label + " = " + temporario + " + " + $3.label + ";\n"; 
+
+                }
+                else if($1.tipo == "float" && $3.tipo == "int") 
+                {
+                    string temporario = insereTabelaSimbolos("","float");
+                    $$.traducao = "\t" + temporario + " = (float) " + $3.label + ";\n" + 
+                    "\t" + $$.label + " = " + $1.label + " + " + temporario + ";\n"; 
+                }
+                else 
+                {
+                    $$.traducao = $1.traducao + $3.traducao + "\t" + 
+                    $$.label + " = " + $1.label + " + " + $3.label + ";\n";
+                }
             }
             | EXP '-' TERMO 
             {   
                 $$.tipo = infereTipo($1.tipo, $3.tipo);
                 $$.label = insereTabelaSimbolos("", $$.tipo);
+
+                if($1.tipo == "int" && $3.tipo == "float") 
+                {
+                    string temporario = insereTabelaSimbolos("","float");
+                    $$.traducao = "\t" + temporario + " = (float) " + $1.label + ";\n" +
+                    "\t" + $$.label + " = " + temporario + " - " + $3.label + ";\n"; 
+
+                }
+                else if($1.tipo == "float" && $3.tipo == "int") 
+                {
+                    string temporario = insereTabelaSimbolos("","float");
+                    $$.traducao = "\t" + temporario + " = (float) " + $3.label + ";\n" + 
+                    "\t" + $$.label + " = " + $1.label + " - " + temporario + ";\n"; 
+                }
+                else 
+                {
+                    $$.traducao = $1.traducao + $3.traducao + "\t" + 
+                    $$.label + " = " + $1.label + " - " + $3.label + ";\n";
+                }
+
                 $$.traducao = $1.traducao + $3.traducao +
                 "\t" + $$.label + " = " + $1.label + " - " + $3.label + ";\n";
             }
@@ -392,7 +428,7 @@ string getTipo(string tipo)
         return "null";    
 }
 
-string infereTipo(string tipo1, string tipo2)
+string infereTipo(string tipo1, string tipo2) // Tabela de conversão que ele acabou falando 
 {
     if(tipo1 == "int" && tipo1 == tipo2) return "int";
     else return "float";
