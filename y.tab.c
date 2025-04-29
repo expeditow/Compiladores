@@ -115,7 +115,7 @@ string pegaTipo(string tipo);
 string infereTipo(string tipo1, string tipo2);
 string pegaBooleano(string valor);
 
-bool debug = false;
+bool debug = true;
 #define true 1
 #define false 0
 
@@ -1333,7 +1333,7 @@ yyreduce:
                 if(debug) cout << "[DEBUG] Atribuição: " << yyvsp[-2].label << " = " << yyvsp[0].label 
                 << "\n  Tipos: " << temp.tipoVariavel << " <- " << yyvsp[0].tipo << endl;
 
-                if(temp.tipoVariavel != yyvsp[0].tipo)
+                if(temp.tipoVariavel != pegaTipo(yyvsp[0].tipo)) // - Ver correção
                     yyerror("Variavel nao suporta valor atribuido");
 
                 yyval.label = temp.label;
@@ -1987,8 +1987,6 @@ int main( int argc, char* argv[] )
 
 void yyerror( string MSG )
 {
-	cout << "Na linha: " << yylinha << ": "<< MSG << endl;
+	cout << "Na linha " << yylinha << ": "<< MSG << endl;
 	exit (0);
 }				
-
-// indisponível soma com char

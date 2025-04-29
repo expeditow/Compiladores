@@ -45,7 +45,7 @@ string pegaTipo(string tipo);
 string infereTipo(string tipo1, string tipo2);
 string pegaBooleano(string valor);
 
-bool debug = false;
+bool debug = true;
 #define true 1
 #define false 0
 
@@ -114,7 +114,7 @@ ATR         : TK_ID '=' EXP
                 if(debug) cout << "[DEBUG] Atribuição: " << $1.label << " = " << $3.label 
                 << "\n  Tipos: " << temp.tipoVariavel << " <- " << $3.tipo << endl;
 
-                if(temp.tipoVariavel != $3.tipo)
+                if(temp.tipoVariavel != pegaTipo($3.tipo))
                     yyerror("Variavel nao suporta valor atribuido");
 
                 $$.label = temp.label;
@@ -490,8 +490,6 @@ int main( int argc, char* argv[] )
 
 void yyerror( string MSG )
 {
-	cout << "Na linha: " << yylinha << ": "<< MSG << endl;
+	cout << "Na linha " << yylinha << ": "<< MSG << endl;
 	exit (0);
 }				
-
-// indisponível soma com char
