@@ -108,6 +108,9 @@ ATR         : TK_ID '=' EXP
 
                 $$.label = temp.label;
                 $$.traducao = $3.traducao + "\t" + temp.label + " = " + $3.label + ";\n";
+
+                // Tem que ver, pq nos exemplos dele ele deixa uma variável tmeporária para receber atribuições e após isso
+                // ele aplica na variável, é simples fazer isso, só usa temporária e acabou
             }
         
 
@@ -115,23 +118,24 @@ EXP         : EXP '+' TERMO
             {   
                 $$.tipo = infereTipo($1.tipo, $3.tipo);
                 $$.label = insereTabelaSimbolos("", $$.tipo);
+                $$.traducao = $1.traducao + $3.traducao;
 
                 if($1.tipo == "int" && $3.tipo == "float") 
                 {
                     string temporario = insereTabelaSimbolos("","float");
-                    $$.traducao = "\t" + temporario + " = (float) " + $1.label + ";\n" +
+                    $$.traducao += "\t" + temporario + " = (float) " + $1.label + ";\n" +
                     "\t" + $$.label + " = " + temporario + " + " + $3.label + ";\n"; 
 
                 }
                 else if($1.tipo == "float" && $3.tipo == "int") 
                 {
                     string temporario = insereTabelaSimbolos("","float");
-                    $$.traducao = "\t" + temporario + " = (float) " + $3.label + ";\n" + 
+                    $$.traducao += "\t" + temporario + " = (float) " + $3.label + ";\n" + 
                     "\t" + $$.label + " = " + $1.label + " + " + temporario + ";\n"; 
                 }
                 else 
                 {
-                    $$.traducao = $1.traducao + $3.traducao + "\t" + 
+                    $$.traducao += $1.traducao + $3.traducao + "\t" + 
                     $$.label + " = " + $1.label + " + " + $3.label + ";\n";
                 }
             }
@@ -139,18 +143,19 @@ EXP         : EXP '+' TERMO
             {   
                 $$.tipo = infereTipo($1.tipo, $3.tipo);
                 $$.label = insereTabelaSimbolos("", $$.tipo);
-
+                $$.traducao = $1.traducao + $3.traducao;
+                
                 if($1.tipo == "int" && $3.tipo == "float") 
                 {
                     string temporario = insereTabelaSimbolos("","float");
-                    $$.traducao = "\t" + temporario + " = (float) " + $1.label + ";\n" +
+                    $$.traducao += "\t" + temporario + " = (float) " + $1.label + ";\n" +
                     "\t" + $$.label + " = " + temporario + " - " + $3.label + ";\n"; 
 
                 }
                 else if($1.tipo == "float" && $3.tipo == "int") 
                 {
                     string temporario = insereTabelaSimbolos("","float");
-                    $$.traducao = "\t" + temporario + " = (float) " + $3.label + ";\n" + 
+                    $$.traducao += "\t" + temporario + " = (float) " + $3.label + ";\n" + 
                     "\t" + $$.label + " = " + $1.label + " - " + temporario + ";\n"; 
                 }
                 else 
@@ -158,9 +163,6 @@ EXP         : EXP '+' TERMO
                     $$.traducao = $1.traducao + $3.traducao + "\t" + 
                     $$.label + " = " + $1.label + " - " + $3.label + ";\n";
                 }
-
-                $$.traducao = $1.traducao + $3.traducao +
-                "\t" + $$.label + " = " + $1.label + " - " + $3.label + ";\n";
             }
             | EXP '>' TERMO 
             {
@@ -268,6 +270,18 @@ FATOR       : '(' EXP ')'
                 $$.traducao = $2.traducao;
                 $$.tipo = $2.tipo;
             }
+            | '(' TK_TIPO ')' FATOR
+            {   
+                // Não entendi muito bem, mas vou fazer uma variável a mais só p deixar da forma como ele fez
+                // temos que criar duas variáveis pq n podemos mod
+
+                $$.label = insereTabelaSimbolos("", $2.label);
+                string tempBr = insereTabelaSimbolos("", $2.label);
+
+                $$.tipo = $2.label;
+                $$.traducao = $4.traducao +
+                "\t" + $$.label + " = (" + $2.label + ") " + $4.label + ";\n";
+            }
             | TK_ID
             {
                 TIPO_SIMBOLO temp;
@@ -301,7 +315,7 @@ FATOR       : '(' EXP ')'
                 $$.tipo = "int"; 
             }
             | TK_FLOAT
-            {
+            {   
                 $$.label = insereTabelaSimbolos("", "ncv");
                 $$.traducao = "\t" + $$.label + " = " + $1.traducao + ";\n"; 
                 $$.tipo = "float"; 
