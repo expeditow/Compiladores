@@ -45,9 +45,12 @@ string pegaTipo(string tipo);
 string infereTipo(string tipo1, string tipo2);
 string pegaBooleano(string valor);
 
-
+bool debug = false;
 #define true 1
 #define false 0
+
+
+extern int yylinha;
 
 %}
 
@@ -63,6 +66,8 @@ string pegaBooleano(string valor);
 
 START 	    :  CMDS
             {   
+                if(debug) cout << "[DEBUG] Árvore completa gerada. Tradução:\n";
+
                 string defines = "\n\t#define true 1\n\t#define false 0\n\n\n";
                 string declaracoes = "";
                 for(auto i: temporarias){
@@ -76,6 +81,7 @@ START 	    :  CMDS
 CMDS        : CMD CMDS
             {
                 $$.traducao = $1.traducao + $2.traducao;
+                if(debug) cout << "[DEBUG] Comando processado. Acumulado:\n" << $1.traducao;
             }
             |
             {
@@ -97,12 +103,16 @@ DECL        : TK_TIPO TK_ID { insereFixasTabelaSimbolos($2.label, $1.label); }
 
 ATR         : TK_ID '=' EXP
             {
+
                 TIPO_SIMBOLO temp;
 
                 if(!verificaTabelaSimbolos($1.label))
                     yyerror("Não foi declarado essa variável");
                 else
                     temp = pegaVariavelTabelaSimbolos(($1.label));
+
+                if(debug) cout << "[DEBUG] Atribuição: " << $1.label << " = " << $3.label 
+                << "\n  Tipos: " << temp.tipoVariavel << " <- " << $3.tipo << endl;
 
                 if(temp.tipoVariavel != $3.tipo)
                     yyerror("Variavel nao suporta valor atribuido");
@@ -116,13 +126,16 @@ ATR         : TK_ID '=' EXP
 EXP         : EXP '+' TERMO 
             {   
                 
+                if(debug) cout << "[DEBUG] Operação + entre: " << $1.tipo << " e " << $3.tipo 
+                << "\n  Label1: " << $1.label << " | Label2: " << $3.label << endl;
+
                 $$.tipo = infereTipo($1.tipo, $3.tipo);
-                //cout << $$.tipo << " "<<  $1.tipo << " "<< $3.tipo << endl;
                 $$.label = insereTemporariasTabelaSimbolos("", $$.tipo);
                 $$.traducao = $1.traducao + $3.traducao;
 
                 if($1.tipo == "int" && $3.tipo == "float") 
                 {
+                    if(debug) cout << "[DEBUG] Convertendo int para float: " << $1.label << endl;
                     string temporario = insereTemporariasTabelaSimbolos("","float");
                     $$.traducao += "\t" + temporario + " = (float) " + $1.label + ";\n" +
                     "\t" + $$.label + " = " + temporario + " + " + $3.label + ";\n"; 
@@ -130,6 +143,7 @@ EXP         : EXP '+' TERMO
                 }
                 else if($1.tipo == "float" && $3.tipo == "int") 
                 {
+                    if(debug) cout << "[DEBUG] Convertendo int para float: " << $1.label << endl;
                     string temporario = insereTemporariasTabelaSimbolos("","float");
                     $$.traducao += "\t" + temporario + " = (float) " + $3.label + ";\n" + 
                     "\t" + $$.label + " = " + $1.label + " + " + temporario + ";\n"; 
@@ -142,12 +156,15 @@ EXP         : EXP '+' TERMO
             }
             | EXP '-' TERMO 
             {   
+                if(debug) cout << "\n[DEBUG] Operação - entre: " << $1.tipo << " e " << $3.tipo 
+                << "\n\t  Label1: " << $1.label << " | Label2: " << $3.label << endl;
                 $$.tipo = infereTipo($1.tipo, $3.tipo);
                 $$.label = insereTemporariasTabelaSimbolos("", $$.tipo);
                 $$.traducao = $1.traducao + $3.traducao;
                 
                 if($1.tipo == "int" && $3.tipo == "float") 
                 {
+                    if(debug) cout << "[DEBUG] Convertendo int para float: " << $1.label << endl;
                     string temporario = insereTemporariasTabelaSimbolos("","float");
                     $$.traducao += "\t" + temporario + " = (float) " + $1.label + ";\n" +
                     "\t" + $$.label + " = " + temporario + " - " + $3.label + ";\n"; 
@@ -155,6 +172,7 @@ EXP         : EXP '+' TERMO
                 }
                 else if($1.tipo == "float" && $3.tipo == "int") 
                 {
+                    if(debug) cout << "[DEBUG] Convertendo int para float: " << $1.label << endl;
                     string temporario = insereTemporariasTabelaSimbolos("","float");
                     $$.traducao += "\t" + temporario + " = (float) " + $3.label + ";\n" + 
                     "\t" + $$.label + " = " + $1.label + " - " + temporario + ";\n"; 
@@ -282,6 +300,9 @@ FATOR       : '(' EXP ')'
                 else 
                     temp = pegaVariavelTabelaSimbolos($1.label);
                 
+                if(debug) cout << "[DEBUG] Acessando variável: " << $1.label 
+                << " (Tipo: " << temp.tipoVariavel << ")\n";
+
                 $$.label = temp.label;
                 $$.tipo = temp.tipoVariavel;
                 $$.traducao = "";
@@ -358,13 +379,14 @@ string geraNomeTemp(string tipo)  // Dá para melhorar essa função
         temporarias.insert({"T" + to_string(qntdVariaveisTemp), "char"});
     else // caso em que n tenha nenhum tipo atribuído - vamos inicializar "vazio" - ou em dinâmico
         temporarias.insert({"T" + to_string(qntdVariaveisTemp), "null"});
-    
-    return "T" + to_string(qntdVariaveisTemp);
+     
+    return "T" + to_string(qntdVariaveisTemp); 
 }
 
 // Vai retonar ao registrador assoaciado a variável
 string insereTemporariasTabelaSimbolos(string nome, string tipo)
 {   
+    if(debug) cout << "[DEBUG] Inserindo TEMPORARIA na tabela: " << nome << " (Tipo: " << tipo << ")\n";
     TIPO_SIMBOLO temp;
 
     temp.nomeVariavel = geraNomeTemp(tipo);
@@ -378,6 +400,7 @@ string insereTemporariasTabelaSimbolos(string nome, string tipo)
 
 void insereFixasTabelaSimbolos(string nome, string tipo)
 {   
+    if(debug) cout << "[DEBUG] Inserindo FIXA na tabela: " << nome << " (Tipo: " << tipo << ")\n";
     TIPO_SIMBOLO temp;
 
     temp.nomeVariavel = nome;
@@ -385,7 +408,6 @@ void insereFixasTabelaSimbolos(string nome, string tipo)
     temp.label = geraNomeTemp(tipo);
     
     tabelaSimbolos.push_back(temp);
-
 }
 
 // Função para verificar se existe na tabela de símbolos
@@ -444,8 +466,10 @@ string pegaTipo(string tipo)
 }
 
 string infereTipo(string tipo1, string tipo2) // Tabela de conversão que ele acabou falando 
-{
+{   
+    if(debug) cout << "[DEBUG] Inferindo tipo entre: " << tipo1 << " e " << tipo2 << endl;
     if(tipo1 == "int" && tipo1 == tipo2) return "int";
+    else if(tipo1 == "char" || tipo2 == "char") yyerror("Operando inválido!");
     else return "float";
 }
 
@@ -458,7 +482,6 @@ string pegaBooleano(string valor)
 
 int main( int argc, char* argv[] )
 {   
-
     yyparse();
     printTabelaSimbolos(); // - fins depurativos
 
@@ -467,7 +490,8 @@ int main( int argc, char* argv[] )
 
 void yyerror( string MSG )
 {
-	cout << MSG << endl;
+	cout << "Na linha: " << yylinha << ": "<< MSG << endl;
 	exit (0);
 }				
 
+// indisponível soma com char

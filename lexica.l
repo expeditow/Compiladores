@@ -1,5 +1,6 @@
 %{
     #include <string>
+    int yylinha = 1;
 %}
 
 ESPACO [ \t]
@@ -16,7 +17,7 @@ ID {LETRA}({LETRA}|{NUM})*
 
 {DELIM} 	{}
 
-"\n"        { return FIM_LINHA;}
+"\n"        { yylinha++; return FIM_LINHA;}
 
 [(){}[\];,]	{ return *yytext; }
 [+\-*/]		{ return *yytext; }
