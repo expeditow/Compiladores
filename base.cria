@@ -1,4 +1,3 @@
-nmr I
 ncv F
-I = (nmr) F
-
+nmr I
+F = I + 2.5

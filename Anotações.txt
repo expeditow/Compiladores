@@ -1,25 +1,31 @@
-#11 Conversão Implícita  
-- Deverá ocorrer a conversão automática de `int` para `float` em expressões mistas. Essa conversão deve ser aplicada na geração do código intermediário. Será necessário criar uma tabela de conversão para determinar os tipos resultantes. Estratégias como as usadas em Ada não serão aceitas.
+Organizar e nomear melhor funções
+Refatorar o uso de strings mágicas
 
-Código na LP:
-float F;
-int I;
-F = I + 2.5;
+Garantir que os tipos só podem receber coisas deles mesmos, ou tem que fazer conversão algo assim
 
-Código Intermediário:
-int T1;
-float T2;
-float T3;
-float T4;
-float T5;
+Tratar a prioridade nos operadores lógicos
 
-T2 = (float) T1;
-T3 = 2.5;
-T4 = T2 + T3;
-T5 = T4;
-
-OBS: A conversão pode ser validada na análise semântica para evitar operações inválidas.
+Garantir que os operadores lógicos só atuem entre os booleanos na minha linguagem - RELACIONAIS E LÓGICOS
+    - Logicamente que vou ter que tratar mais exceções além dessa
+    - Fazer com que eles não formem expressão também! apenas dois elementos podem ser comparados 
+        - Isso seria interresante
+            - P isso eu acho que daria p criar uma variável no nó que diz quantos elementos estão na expressão
+            - Ai caso o nó que estamos seja um que suporte apenas dois elementos, retornamos erro, seria uma das formas de fazer
+            - Verificar se as variáveis possuem valor também
 
 
-O que acontece é que usamos uma variável substituta p aquela que precisa ser convertida
-é bem simples de implementar isso
+            Separar funções para inserir na tabela de símbolos: modularização clara.
+
+Tratar variáveis declaradas, temporárias e tipagem: fundamental para verificação semântica.
+
+Evitar strings mágicas: excelente prática de engenharia.
+
+Organizar e nomear melhor funções: melhora a manutenção do código.
+
+Verificar coerência de tipos na atribuição: garante consistência semântica.
+
+Controlar expressões booleanas com operadores lógicos e relacionais: ótima ideia para restringir o uso incorreto de operadores.
+
+Adicionar restrições estruturais (ex: operadores só com dois elementos): agrega robustez à análise semântica.
+
+Adicionar contagem de elementos nos nós: excelente ideia para validação semântica da estrutura da árvore.
