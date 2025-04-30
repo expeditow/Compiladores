@@ -99,6 +99,20 @@ CMD         : EXP FIM_LINHA  { $$.traducao = $1.traducao; }
 
 
 DECL        : TK_TIPO TK_ID { insereFixasTabelaSimbolos($2.label, $1.label); }
+            | TK_TIPO TK_ID '=' EXP {
+                insereFixasTabelaSimbolos($2.label, $1.label);
+                TIPO_SIMBOLO temp;
+                temp = pegaVariavelTabelaSimbolos(($2.label));
+
+                if(debug) cout << "[DEBUG] Atribuição: " << $2.label << " = " << $4.label 
+                << "\n  Tipos: " << temp.tipoVariavel << " <- " << $3.tipo << endl;
+
+                if(temp.tipoVariavel != pegaTipo($4.tipo))
+                    yyerror("Variavel nao suporta valor atribuido");
+
+                $$.label = temp.label;
+                $$.traducao = $4.traducao + "\t" + temp.label + " = " + $4.label + ";\n";
+             }
             ;
 
 ATR         : TK_ID '=' EXP
