@@ -1,3 +1,1 @@
-nmr x = 5
-nmr y
-y = 3 
+nmr x = 5 + 3 + 4

@@ -139,34 +139,17 @@ ATR         : TK_ID '=' EXP
 
 EXP         : EXP '+' TERMO 
             {   
-                
                 if(debug) cout << "[DEBUG] Operação + entre: " << $1.tipo << " e " << $3.tipo 
                 << "\n  Label1: " << $1.label << " | Label2: " << $3.label << endl;
 
+                // Determina o tipo e gera temporária, se necessário
                 $$.tipo = infereTipo($1.tipo, $3.tipo);
-                $$.label = insereTemporariasTabelaSimbolos("", $$.tipo);
+                $$.label = insereTemporariasTabelaSimbolos("", $$.tipo); // Gera temporária para o resultado
+
                 $$.traducao = $1.traducao + $3.traducao;
 
-                if($1.tipo == "int" && $3.tipo == "float") 
-                {
-                    if(debug) cout << "[DEBUG] Convertendo int para float: " << $1.label << endl;
-                    string temporario = insereTemporariasTabelaSimbolos("","float");
-                    $$.traducao += "\t" + temporario + " = (float) " + $1.label + ";\n" +
-                    "\t" + $$.label + " = " + temporario + " + " + $3.label + ";\n"; 
-
-                }
-                else if($1.tipo == "float" && $3.tipo == "int") 
-                {
-                    if(debug) cout << "[DEBUG] Convertendo int para float: " << $1.label << endl;
-                    string temporario = insereTemporariasTabelaSimbolos("","float");
-                    $$.traducao += "\t" + temporario + " = (float) " + $3.label + ";\n" + 
-                    "\t" + $$.label + " = " + $1.label + " + " + temporario + ";\n"; 
-                }
-                else 
-                {
-                    $$.traducao += $1.traducao + $3.traducao + "\t" + 
-                    $$.label + " = " + $1.label + " + " + $3.label + ";\n";
-                }
+                // Gera código para a operação de soma
+                $$.traducao += "\t" + $$.label + " = " + $1.label + " + " + $3.label + ";\n";
             }
             | EXP '-' TERMO 
             {   
