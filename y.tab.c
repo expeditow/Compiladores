@@ -1333,7 +1333,7 @@ yyreduce:
                 if(debug) cout << "[DEBUG] Atribuição: " << yyvsp[-2].label << " = " << yyvsp[0].label 
                 << "\n  Tipos: " << temp.tipoVariavel << " <- " << yyvsp[0].tipo << endl;
 
-                if(temp.tipoVariavel != pegaTipo(yyvsp[0].tipo)) // - Ver correção
+                if(temp.tipoVariavel != pegaTipo(yyvsp[0].tipo))
                     yyerror("Variavel nao suporta valor atribuido");
 
                 yyval.label = temp.label;
