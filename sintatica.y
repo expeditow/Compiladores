@@ -45,10 +45,9 @@ string pegaTipo(string tipo);
 string infereTipo(string tipo1, string tipo2);
 string pegaBooleano(string valor);
 
-bool debug = true;
+bool debug = false;
 #define true 1
 #define false 0
-
 
 extern int yylinha;
 
@@ -150,8 +149,7 @@ EXP         : EXP '+' TERMO
                 }
                 else 
                 {
-                    $$.traducao += $1.traducao + $3.traducao + "\t" + 
-                    $$.label + " = " + $1.label + " + " + $3.label + ";\n";
+                    $$.traducao += "\t" + $$.label + " = " + $1.label + " + " + $3.label + ";\n";
                 }
             }
             | EXP '-' TERMO 
@@ -179,8 +177,7 @@ EXP         : EXP '+' TERMO
                 }
                 else 
                 {
-                    $$.traducao = $1.traducao + $3.traducao + "\t" + 
-                    $$.label + " = " + $1.label + " - " + $3.label + ";\n";
+                    $$.traducao = "\t" + $$.label + " = " + $1.label + " - " + $3.label + ";\n";
                 }
             }
             | EXP '>' TERMO 
@@ -225,7 +222,7 @@ EXP         : EXP '+' TERMO
                 $$.traducao = $1.traducao + $3.traducao +
                 "\t" + $$.label + " = " + $1.label + " == " + $3.label + ";\n";           
             }
-            | EXP TK_E_LOGICO TERMO // PRECISO TRATAR
+            | EXP TK_E_LOGICO TERMO
             {
                 $$.tipo = "bool";
                 $$.label = insereTemporariasTabelaSimbolos("", $$.tipo);
@@ -236,7 +233,7 @@ EXP         : EXP '+' TERMO
                 $$.traducao = $1.traducao + $3.traducao +
                 "\t" + $$.label + " = " + $1.label + " && " + $3.label + ";\n";  
             }
-            | EXP TK_OU_LOGICO TERMO // PRECISA TRATAR
+            | EXP TK_OU_LOGICO TERMO
             {
                 $$.tipo = "bool";
                 $$.label = insereTemporariasTabelaSimbolos("", $$.tipo);
@@ -465,11 +462,12 @@ string pegaTipo(string tipo)
         return "null";    
 }
 
-string infereTipo(string tipo1, string tipo2) // Tabela de conversão que ele acabou falando 
+string infereTipo(string tipo1, string tipo2)
 {   
     if(debug) cout << "[DEBUG] Inferindo tipo entre: " << tipo1 << " e " << tipo2 << endl;
     if(tipo1 == "int" && tipo1 == tipo2) return "int";
     else if(tipo1 == "char" || tipo2 == "char") yyerror("Operando inválido!");
+
     else return "float";
 }
 
