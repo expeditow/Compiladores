@@ -252,19 +252,57 @@ EXP         : EXP '+' TERMO
             } 
             ;
 
-TERMO       : TERMO '*' FATOR 
+TERMO       : TERMO '*' FATOR
             {   
                 $$.tipo = infereTipo($1.tipo, $3.tipo);
                 $$.label = insereTemporariasTabelaSimbolos("",  $$.tipo);
-                $$.traducao = $1.traducao + $3.traducao +
-                "\t" + $$.label + " = " + $1.label + " * " + $3.label + ";\n";
+                $$.traducao = $1.traducao + $3.traducao;
+
+                if($1.tipo == "int" && $3.tipo == "float") 
+                {
+                    if(debug) cout << "[DEBUG] Convertendo int para float: " << $1.label << endl;
+                    string temporario = insereTemporariasTabelaSimbolos("","float");
+                    $$.traducao += "\t" + temporario + " = (float) " + $1.label + ";\n" +
+                    "\t" + $$.label + " = " + temporario + " * " + $3.label + ";\n"; 
+
+                }
+                else if($1.tipo == "float" && $3.tipo == "int") 
+                {
+                    if(debug) cout << "[DEBUG] Convertendo int para float: " << $1.label << endl;
+                    string temporario = insereTemporariasTabelaSimbolos("","float");
+                    $$.traducao += "\t" + temporario + " = (float) " + $3.label + ";\n" + 
+                    "\t" + $$.label + " = " + $1.label + " * " + temporario + ";\n"; 
+                }
+                else 
+                {
+                    $$.traducao = "\t" + $$.label + " = " + $1.label + " * " + $3.label + ";\n";
+                }
             }
             | TERMO '/' FATOR 
             { 
                 $$.tipo = infereTipo($1.tipo, $3.tipo);
                 $$.label = insereTemporariasTabelaSimbolos("",  $$.tipo);
-                $$.traducao = $1.traducao + $3.traducao +
-                "\t" + $$.label + " = " + $1.label + " / " + $3.label + ";\n";
+                $$.traducao = $1.traducao + $3.traducao;
+
+                if($1.tipo == "int" && $3.tipo == "float") 
+                {
+                    if(debug) cout << "[DEBUG] Convertendo int para float: " << $1.label << endl;
+                    string temporario = insereTemporariasTabelaSimbolos("","float");
+                    $$.traducao += "\t" + temporario + " = (float) " + $1.label + ";\n" +
+                    "\t" + $$.label + " = " + temporario + " / " + $3.label + ";\n"; 
+
+                }
+                else if($1.tipo == "float" && $3.tipo == "int") 
+                {
+                    if(debug) cout << "[DEBUG] Convertendo int para float: " << $1.label << endl;
+                    string temporario = insereTemporariasTabelaSimbolos("","float");
+                    $$.traducao += "\t" + temporario + " = (float) " + $3.label + ";\n" + 
+                    "\t" + $$.label + " = " + $1.label + " / " + temporario + ";\n"; 
+                }
+                else 
+                {
+                    $$.traducao = "\t" + $$.label + " = " + $1.label + " / " + $3.label + ";\n";
+                }
             }
             | FATOR          
             { 
