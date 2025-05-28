@@ -1,6 +1,6 @@
-nmr I 
-ncv J
+nmr I
+pp J
 ncv L
 I = 2
-J = 2.5
-L = I * J
+J = reto
+L = I / J

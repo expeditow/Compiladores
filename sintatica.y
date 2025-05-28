@@ -147,6 +147,11 @@ EXP         : EXP '+' TERMO
                     $$.traducao += "\t" + temporario + " = (float) " + $3.label + ";\n" + 
                     "\t" + $$.label + " = " + $1.label + " + " + temporario + ";\n"; 
                 }
+                else if($1.tipo == "bool" || $3.tipo == "bool")
+                {
+                    string erro = "[ERRO] Operação '+' inválida entre tipos " + $1.tipo + " e " + $3.tipo;
+                    yyerror(erro);
+                }
                 else 
                 {
                     $$.traducao += "\t" + $$.label + " = " + $1.label + " + " + $3.label + ";\n";
@@ -175,15 +180,29 @@ EXP         : EXP '+' TERMO
                     $$.traducao += "\t" + temporario + " = (float) " + $3.label + ";\n" + 
                     "\t" + $$.label + " = " + $1.label + " - " + temporario + ";\n"; 
                 }
+                else if($1.tipo == "bool" || $3.tipo == "bool")
+                {
+                    string erro = "[ERRO] Operação '-' inválida entre tipos " + $1.tipo + " e " + $3.tipo;
+                    yyerror(erro);
+                }
                 else 
                 {
-                    $$.traducao = "\t" + $$.label + " = " + $1.label + " - " + $3.label + ";\n";
+                    $$.traducao += "\t" + $$.label + " = " + $1.label + " - " + $3.label + ";\n";
                 }
             }
             | EXP '>' TERMO 
-            {
+            {   
                 $$.tipo = "bool";
                 $$.label = insereTemporariasTabelaSimbolos("", $$.tipo);
+
+                if(($1.tipo == "int" && $3.tipo == "float") || ($1.tipo == "float" && $3.tipo == "int")) 
+                { 
+                    string erro = "[ERRO] Operação '>' inválida entre tipos " + $1.tipo + " e " + $3.tipo;
+                    yyerror(erro);
+                }
+                else if($1.tipo == "bool" || $3.tipo == "bool")
+                    yyerror("Operandos inválidos\n");
+                   
                 $$.traducao = $1.traducao + $3.traducao +
                 "\t" + $$.label + " = " + $1.label + " > " + $3.label + ";\n";
             }
@@ -191,13 +210,30 @@ EXP         : EXP '+' TERMO
             {
                 $$.tipo = "bool";
                 $$.label = insereTemporariasTabelaSimbolos("", $$.tipo);
+
+                if(($1.tipo == "int" && $3.tipo == "float") || ($1.tipo == "float" && $3.tipo == "int")) 
+                {
+                    string erro = "[ERRO] Operação '<' inválida entre tipos " + $1.tipo + " e " + $3.tipo;
+                    yyerror(erro);
+                }
+                else if($1.tipo == "bool" || $3.tipo == "bool")
+                    yyerror("Operandos inválidos\n");
+                
                 $$.traducao = $1.traducao + $3.traducao +
                 "\t" + $$.label + " = " + $1.label + " < " + $3.label + ";\n";
             }
-            | EXP TK_MAIOR_IGUAL TERMO 
+            | EXP TK_MAIOR_IGUAL TERMO // fazer verificação de tipo aqui
             {
                 $$.tipo = "bool";
                 $$.label = insereTemporariasTabelaSimbolos("", $$.tipo);
+                if(($1.tipo == "int" && $3.tipo == "float") || ($1.tipo == "float" && $3.tipo == "int")) 
+                {
+                    string erro = "[ERRO] Operação '>=' inválida entre tipos " + $1.tipo + " e " + $3.tipo;
+                    yyerror(erro);
+                }
+                else if($1.tipo == "bool" || $3.tipo == "bool")
+                    yyerror("Operandos inválidos\n");
+                
                 $$.traducao = $1.traducao + $3.traducao +
                 "\t" + $$.label + " = " + $1.label + " >= " + $3.label + ";\n";
             }
@@ -205,13 +241,31 @@ EXP         : EXP '+' TERMO
             {
                 $$.tipo = "bool";
                 $$.label = insereTemporariasTabelaSimbolos("", $$.tipo);
+
+                if(($1.tipo == "int" && $3.tipo == "float") || ($1.tipo == "float" && $3.tipo == "int")) 
+                {
+                    string erro = "[ERRO] Operação '<=' inválida entre tipos " + $1.tipo + " e " + $3.tipo;
+                    yyerror(erro);
+                }
+                else if($1.tipo == "bool" || $3.tipo == "bool")
+                    yyerror("Operandos inválidos\n");
+                
+
                 $$.traducao = $1.traducao + $3.traducao +
-                "\t" + $$.label + " = " + $1.label + "<= " + $3.label + ";\n";
+                "\t" + $$.label + " = " + $1.label + " <= " + $3.label + ";\n";
             }
-            | EXP TK_DIFERENTE TERMO 
+            | EXP TK_DIFERENTE TERMO // os dois precisam ser o mesmo tipo
             {
                 $$.tipo = "bool";
                 $$.label = insereTemporariasTabelaSimbolos("", $$.tipo);
+                if(($1.tipo == "int" && $3.tipo == "float") || ($1.tipo == "float" && $3.tipo == "int")) 
+                {
+                    string erro = "[ERRO] Operação '!=' inválida entre tipos " + $1.tipo + " e " + $3.tipo;
+                    yyerror(erro);
+                }
+                else if($1.tipo == "bool" || $3.tipo == "bool")
+                    yyerror("Operandos inválidos\n");
+                
                 $$.traducao = $1.traducao + $3.traducao +
                 "\t" + $$.label + " = " + $1.label + " != " + $3.label + ";\n";           
             }
@@ -219,6 +273,14 @@ EXP         : EXP '+' TERMO
             {
                 $$.tipo = "bool";
                 $$.label = insereTemporariasTabelaSimbolos("", $$.tipo);
+                if(($1.tipo == "int" && $3.tipo == "float") || ($1.tipo == "float" && $3.tipo == "int")) 
+                    {
+                        string erro = "[ERRO] Operação '==' inválida entre tipos " + $1.tipo + " e " + $3.tipo;
+                        yyerror(erro);
+                    }
+                else if($1.tipo == "bool" || $3.tipo == "bool")
+                    yyerror("Operandos inválidos\n");
+                
                 $$.traducao = $1.traducao + $3.traducao +
                 "\t" + $$.label + " = " + $1.label + " == " + $3.label + ";\n";           
             }
@@ -273,6 +335,11 @@ TERMO       : TERMO '*' FATOR
                     $$.traducao += "\t" + temporario + " = (float) " + $3.label + ";\n" + 
                     "\t" + $$.label + " = " + $1.label + " * " + temporario + ";\n"; 
                 }
+                else if($1.tipo == "bool" || $3.tipo == "bool")
+                {
+                    string erro = "[ERRO] Operação '*' inválida entre tipos " + $1.tipo + " e " + $3.tipo;
+                    yyerror(erro);
+                }
                 else 
                 {
                     $$.traducao = "\t" + $$.label + " = " + $1.label + " * " + $3.label + ";\n";
@@ -298,6 +365,11 @@ TERMO       : TERMO '*' FATOR
                     string temporario = insereTemporariasTabelaSimbolos("","float");
                     $$.traducao += "\t" + temporario + " = (float) " + $3.label + ";\n" + 
                     "\t" + $$.label + " = " + $1.label + " / " + temporario + ";\n"; 
+                }
+                else if($1.tipo == "bool" || $3.tipo == "bool")
+                {
+                    string erro = "[ERRO] Operação '/' inválida entre tipos " + $1.tipo + " e " + $3.tipo;
+                    yyerror(erro);
                 }
                 else 
                 {
