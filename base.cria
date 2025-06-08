@@ -1,0 +1,8 @@
+nmr x {
+    nmr L
+    L = 10
+} 
+nmr y {
+    nmr X
+    X = 7 + 5
+}

@@ -887,12 +887,12 @@ YY_RULE_SETUP
 case 24:
 YY_RULE_SETUP
 #line 52 "lexica.l"
-{yylval.label = yytext; return TK_BOOLEAN; }
+{ yylval.label = yytext; return TK_BOOLEAN; }
 	YY_BREAK
 case 25:
 YY_RULE_SETUP
 #line 53 "lexica.l"
-{yylval.label = yytext; return TK_BOOLEAN; }
+{ yylval.label = yytext; return TK_BOOLEAN; }
 	YY_BREAK
 case 26:
 YY_RULE_SETUP

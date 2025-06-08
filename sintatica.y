@@ -9,7 +9,6 @@
 using namespace std;
 
 int qntdVariaveisTemp = 0;
-int linhas;
 
 struct atributos // Atributos aqui é cada nó da árvore, cada nó possui:
 {
@@ -31,11 +30,13 @@ void yyerror(string);
 
 set<pair<string,string>> temporarias;
 
-vector<TIPO_SIMBOLO> tabelaSimbolos;
+vector<map<string, TIPO_SIMBOLO>> pilhaTabelasSimbolos;
 
 bool verificaTabelaSimbolos(string nome);
 TIPO_SIMBOLO pegaVariavelTabelaSimbolos(string nome);
 void printTabelaSimbolos();
+void entraEscopo();
+void saiEscopo();
 
 void insereFixasTabelaSimbolos(string nome, string tipo);
 string insereTemporariasTabelaSimbolos(string nome, string tipo);
@@ -63,7 +64,7 @@ extern int yylinha;
 
 %%
 
-START 	    :  CMDS
+START 	    :  { entraEscopo(); } BLOCOS
             {   
                 if(debug) cout << "[DEBUG] Árvore completa gerada. Tradução:\n";
 
@@ -72,9 +73,42 @@ START 	    :  CMDS
                 for(auto i: temporarias){
                     declaracoes += "\t" + i.second + " " + i.first + ";\n";
                 }
-                cout << defines << declaracoes << endl << $1.traducao << endl;
+                cout << defines << declaracoes << endl << $2.traducao << endl;
+                //printTabelaSimbolos(); // - fins depurativos
+                saiEscopo();
             }
             |
+            ;
+
+BLOCOS      : BLOCO BLOCOS
+            {
+                $$.traducao =  $1.traducao + $2.traducao;
+            }
+            |
+            {
+                $$.traducao = "";
+            }
+            ;
+
+BLOCO       : TK_TIPO TK_ID '{' { entraEscopo(); } CMDS '}' FIM_LINHA // p ele pegar bloco com espaço
+            {
+                $$.traducao =  $1.label + " " + $2.label + "{\n" + $5.traducao + "}\n";
+                printTabelaSimbolos();
+                saiEscopo();
+                if(debug) cout << "[DEBUG] Bloco identificado.\n";
+            }
+            |
+            TK_TIPO TK_ID '{' { entraEscopo(); } CMDS '}' // p ele pegar último bloco caso não tenha espaço
+            {
+                $$.traducao =  $1.label + " " + $2.label + "{\n" + $5.traducao + "}\n";
+                printTabelaSimbolos(); 
+                saiEscopo();
+                if(debug) cout << "[DEBUG] Bloco identificado.\n";
+            }
+            | FIM_LINHA // p ele pegar linha entre blocos
+            {
+                $$.traducao = "";
+            }
             ;
 
 CMDS        : CMD CMDS
@@ -92,12 +126,17 @@ CMD         : EXP FIM_LINHA  { $$.traducao = $1.traducao; }
             | DECL           { $$.traducao = $1.traducao; }
             | DECL FIM_LINHA { $$.traducao = $1.traducao; }
             | ATR            { $$.traducao = $1.traducao; }
+            | ATR FIM_LINHA  { $$.traducao = $1.traducao; }
             | EXP            { $$.traducao = $1.traducao; }
             | FIM_LINHA      { $$.traducao = "";          }
             ;
 
 
-DECL        : TK_TIPO TK_ID { insereFixasTabelaSimbolos($2.label, $1.label); }
+DECL        : TK_TIPO TK_ID 
+            { 
+                insereFixasTabelaSimbolos($2.label, $1.label); 
+                $$.traducao = "";
+            }
             ;
 
 ATR         : TK_ID '=' EXP
@@ -493,68 +532,91 @@ string geraNomeTemp(string tipo)  // Dá para melhorar essa função
 // Vai retonar ao registrador assoaciado a variável
 string insereTemporariasTabelaSimbolos(string nome, string tipo)
 {   
-    if(debug) cout << "[DEBUG] Inserindo TEMPORARIA na tabela: " << nome << " (Tipo: " << tipo << ")\n";
-    TIPO_SIMBOLO temp;
+    if (pilhaTabelasSimbolos.empty()) {
+        yyerror("Erro de lógica: Tentou gerar temporária sem um escopo ativo.");
+        return ""; // Ou lance uma exceção
+    }
 
-    temp.nomeVariavel = geraNomeTemp(tipo);
-    temp.tipoVariavel = pegaTipo(tipo); // Necessariamente precisa ser isso, pois, ele trata dos nomes que escolhemos na nossa linguagem
-    temp.label = temp.nomeVariavel;
+    map<string, TIPO_SIMBOLO>& escopoAtual = pilhaTabelasSimbolos.back();
     
-    tabelaSimbolos.push_back(temp);
+    TIPO_SIMBOLO temp;
+    temp.nomeVariavel = geraNomeTemp(tipo);
+    temp.tipoVariavel = pegaTipo(tipo);
+    temp.label = temp.nomeVariavel;
+
+    escopoAtual[temp.nomeVariavel] = temp;
+
+    if(debug) cout << "[DEBUG] Inserindo TEMPORARIA na tabela (escopo atual): " << temp.nomeVariavel << " (Tipo: " << temp.tipoVariavel << ")\n";
 
     return temp.label;
 }
 
 void insereFixasTabelaSimbolos(string nome, string tipo)
 {   
-    if(debug) cout << "[DEBUG] Inserindo FIXA na tabela: " << nome << " (Tipo: " << tipo << ")\n";
-    TIPO_SIMBOLO temp;
+    if (pilhaTabelasSimbolos.empty())
+    {
+        yyerror("Erro de lógica: Tentou declarar variável sem um escopo ativo.");
+        return;
+    }
 
+    // Pega o escopo atual (topo da pilha)
+    map<string, TIPO_SIMBOLO>& escopoAtual = pilhaTabelasSimbolos.back();
+
+    // Verifica se a variável já existe no escopo atual
+    if (escopoAtual.count(nome))
+    {
+        yyerror("Erro: Variável '" + nome + "' já declarada neste escopo.");
+        return;
+    }
+
+    if (debug) cout << "[DEBUG] Inserindo FIXA na tabela (escopo atual): " << nome << " (Tipo: " << tipo << ")\n";
+
+    TIPO_SIMBOLO temp;
     temp.nomeVariavel = nome;
     temp.tipoVariavel = pegaTipo(tipo);
     temp.label = geraNomeTemp(tipo);
-    
-    tabelaSimbolos.push_back(temp);
+
+    escopoAtual[nome] = temp;
 }
 
 // Função para verificar se existe na tabela de símbolos
 bool verificaTabelaSimbolos(string nome)
 {
-    bool encontrei = false;
 
-    for(int i = 0; i < tabelaSimbolos.size(); i++)
-        if(tabelaSimbolos[i].nomeVariavel == nome)
-            encontrei = true;
-    
-    return encontrei;
+    for (int i = pilhaTabelasSimbolos.size() - 1; i >= 0; --i)
+    {
+        if (pilhaTabelasSimbolos[i].count(nome)) 
+        { 
+            return true; 
+        }
+    }
+    return false;
 }
 
 // Só para pegar a variável na tabela de símbolos, tenho que setar em um caso onde não tenha
 TIPO_SIMBOLO pegaVariavelTabelaSimbolos(string nome)
 {
-
-    TIPO_SIMBOLO temp;
-    for(int i = 0; i < tabelaSimbolos.size(); i++)
-    {
-        if(tabelaSimbolos[i].nomeVariavel == nome)
-        {
-            temp = tabelaSimbolos[i];
+    for (int i = pilhaTabelasSimbolos.size() - 1; i >= 0; --i) {
+        if (pilhaTabelasSimbolos[i].count(nome)) {
+            return pilhaTabelasSimbolos[i][nome];
         }
     }
-
-    return temp;
 }
 
 // Função para printar 
 void printTabelaSimbolos()
 {
-    for(int i = 0; i < tabelaSimbolos.size(); i++)
-    {
-        cout << "Simbolo [" <<  i+1 << "] : nome: " <<  tabelaSimbolos[i].nomeVariavel << " tipo: " 
-        << tabelaSimbolos[i].tipoVariavel << " label: " << tabelaSimbolos[i].label << endl;
-
+    cout << "\n--- Tabela de Simbolos (Escopos) ---\n";
+    for (size_t i = 0; i < pilhaTabelasSimbolos.size(); ++i) {
+        cout << "Escopo " << i << ":\n";
+        for (const auto& pair : pilhaTabelasSimbolos[i]) {
+            const TIPO_SIMBOLO& simbolo = pair.second;
+            std::cout << "  Nome: " << simbolo.nomeVariavel
+                      << ", Tipo: " << simbolo.tipoVariavel
+                      << ", Label: " << simbolo.label << std::endl;
+        }
     }
-    cout << endl;
+    cout << "-----------------------------------\n";
 }
 
 // Função para converter tipo
@@ -578,7 +640,7 @@ string infereTipo(string tipo1, string tipo2)
     if(tipo1 == "int" && tipo1 == tipo2) return "int";
     else if(tipo1 == "char" || tipo2 == "char") yyerror("Operando inválido!");
 
-    else return "float";
+    return "float";
 }
 
 string pegaBooleano(string valor)
@@ -588,13 +650,28 @@ string pegaBooleano(string valor)
     else return "error"; // erro
 }
 
+void entraEscopo()
+{
+    pilhaTabelasSimbolos.push_back({});
+    if (debug) cout << "[DEBUG] Entrou em um novo escopo. Tamanho da pilha: " << pilhaTabelasSimbolos.size() << endl;
+}
+
+void saiEscopo()
+{
+    if (!pilhaTabelasSimbolos.empty()) {
+        pilhaTabelasSimbolos.pop_back(); 
+        if (debug) cout << "[DEBUG] Saiu do escopo atual. Tamanho da pilha: " << pilhaTabelasSimbolos.size() << endl;
+    } else {
+        yyerror("Erro de lógica: Tentou sair de um escopo vazio.");
+    }
+}
+
 int main( int argc, char* argv[] )
 {   
     yyparse();
-    printTabelaSimbolos(); // - fins depurativos
-
 	return 0;
 }
+
 
 void yyerror( string MSG )
 {

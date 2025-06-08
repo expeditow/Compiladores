@@ -1,4 +1,0 @@
-Tirar: 
-    - Números em operadores booleanos - [X]
-    - Possibilidade de somar valores boleanos com inteiro ou com qualquer valor - [X] - já tinha implementado
-    - Possibilidade de comparar valores diferentes, por exemplo: 5.3 > 6 [X]
