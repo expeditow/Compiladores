@@ -68,7 +68,8 @@ extern int yydebug;
     TK_OU_LOGICO = 269,            /* TK_OU_LOGICO  */
     TK_NEGACAO = 270,              /* TK_NEGACAO  */
     TK_IF = 271,                   /* TK_IF  */
-    FIM_LINHA = 272                /* FIM_LINHA  */
+    TK_ELSE = 272,                 /* TK_ELSE  */
+    FIM_LINHA = 273                /* FIM_LINHA  */
   };
   typedef enum yytokentype yytoken_kind_t;
 #endif
@@ -91,7 +92,8 @@ extern int yydebug;
 #define TK_OU_LOGICO 269
 #define TK_NEGACAO 270
 #define TK_IF 271
-#define FIM_LINHA 272
+#define TK_ELSE 272
+#define FIM_LINHA 273
 
 /* Value type.  */
 #if ! defined YYSTYPE && ! defined YYSTYPE_IS_DECLARED

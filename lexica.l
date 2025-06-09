@@ -49,6 +49,7 @@ ID {LETRA}({LETRA}|{NUM})*
 \'[^\\']\'  { yylval.traducao = yytext; return TK_CHAR; }
 
 "se"        { return TK_IF;}
+"senao"     { return TK_ELSE; }
 "reto"      { yylval.label = yytext; return TK_BOOLEAN; }
 "torto"     { yylval.label = yytext; return TK_BOOLEAN; }
 {ID}		{ yylval.label = yytext; return TK_ID; }

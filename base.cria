@@ -2,9 +2,9 @@ nmr x {
     nmr A
     A = 5
     nmr B
-    nmr C
     se (A > 3) {
         B = 5
+    } senao {
+        B = 10
     }
-    C = 3
 } 

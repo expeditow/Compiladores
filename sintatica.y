@@ -9,11 +9,9 @@
 using namespace std;
 
 int qntdVariaveisTemp = 0;
-
-// <<< MUDANÇA: Adicionado o contador de rótulos para uso futuro com goto.
 int contador_rotulos = 0;
 
-struct atributos // Atributos aqui é cada nó da árvore, cada nó possui:
+struct atributos 
 {
     string label;       // A variável temporária atribuída
     string traducao;    // A tradução em código intermediário
@@ -44,7 +42,6 @@ void saiEscopo();
 void insereFixasTabelaSimbolos(string nome, string tipo);
 string insereTemporariasTabelaSimbolos(string nome, string tipo);
 
-// <<< MUDANÇA: Adicionada a função para gerar rótulos únicos.
 string novo_rotulo();
 
 string geraNomeTemporarias(string tipo);
@@ -63,7 +60,7 @@ extern int yylinha;
 %token TK_TIPO TK_ID
 %token TK_INT TK_FLOAT TK_BOOLEAN TK_CHAR
 %token TK_MAIOR_IGUAL TK_MENOR_IGUAL TK_DIFERENTE TK_IGUAL TK_E_LOGICO TK_OU_LOGICO TK_NEGACAO
-%token TK_IF
+%token TK_IF TK_ELSE
 %token FIM_LINHA
 
 %start START
@@ -160,6 +157,18 @@ CMD         : EXP FIM_LINHA  { $$.traducao = $1.traducao; }
                 $$.traducao = $3.traducao +
                               "\tif (!" + $3.label + ") goto " + rotuloFimIf + ";\n" + 
                               $5.traducao + rotuloFimIf + ":\n"; 
+            }
+            | TK_IF '(' EXP ')' BLOCO TK_ELSE BLOCO
+            {
+                string rotuloElse = novo_rotulo();
+                string rotuloFimIfElse = novo_rotulo();
+                $$.traducao = $3.traducao + // Tradução da expressão (condição)
+                              "\tif (!" + $3.label + ") goto " + rotuloElse + ";\n" + // Se cond. falsa, salta para o 'else'
+                              $5.traducao + // Tradução do BLOCO do 'if'
+                              "\tgoto " + rotuloFimIfElse + ";\n" + // Salta para o fim de tudo após o 'if'
+                              rotuloElse + ":\n" + // Rótulo para o início do bloco 'else'
+                              $7.traducao + // Tradução do BLOCO do 'else'
+                              rotuloFimIfElse + ":\n"; // Rótulo para o fim de toda a estrutura
             }
             ;
 
