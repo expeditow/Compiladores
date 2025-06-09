@@ -10,10 +10,13 @@ using namespace std;
 
 int qntdVariaveisTemp = 0;
 
+// <<< MUDANÇA: Adicionado o contador de rótulos para uso futuro com goto.
+int contador_rotulos = 0;
+
 struct atributos // Atributos aqui é cada nó da árvore, cada nó possui:
 {
-	string label;       // A variável temporária atribuída
-	string traducao;    // A tradução em código intermediário
+    string label;       // A variável temporária atribuída
+    string traducao;    // A tradução em código intermediário
     string tipo;        // O tipo, p casos de operações que precisamos criar uma nova label
 };
 
@@ -41,6 +44,9 @@ void saiEscopo();
 void insereFixasTabelaSimbolos(string nome, string tipo);
 string insereTemporariasTabelaSimbolos(string nome, string tipo);
 
+// <<< MUDANÇA: Adicionada a função para gerar rótulos únicos.
+string novo_rotulo();
+
 string geraNomeTemporarias(string tipo);
 string pegaTipo(string tipo);
 string infereTipo(string tipo1, string tipo2);
@@ -57,6 +63,7 @@ extern int yylinha;
 %token TK_TIPO TK_ID
 %token TK_INT TK_FLOAT TK_BOOLEAN TK_CHAR
 %token TK_MAIOR_IGUAL TK_MENOR_IGUAL TK_DIFERENTE TK_IGUAL TK_E_LOGICO TK_OU_LOGICO TK_NEGACAO
+%token TK_IF
 %token FIM_LINHA
 
 %start START
@@ -64,8 +71,8 @@ extern int yylinha;
 
 %%
 
-START 	    :  { entraEscopo(); } CODIGO
-            {   
+START       :  { entraEscopo(); } CODIGO
+            {
                 if(debug) cout << "[DEBUG] Árvore completa gerada. Tradução:\n";
 
                 string defines = "\n\t#define true 1\n\t#define false 0\n\n\n";
@@ -74,13 +81,12 @@ START 	    :  { entraEscopo(); } CODIGO
                     declaracoes += "\t" + i.second + " " + i.first + ";\n";
                 }
                 cout << defines << declaracoes << endl << $2.traducao << endl;
-                //printTabelaSimbolos(); // - fins depurativos
                 saiEscopo();
             }
             |
             ;
 
-CODIGO      :   ITEM CODIGO
+CODIGO      :  ITEM CODIGO
             {
                 $$.traducao = $1.traducao + $2.traducao;
             }
@@ -89,46 +95,44 @@ CODIGO      :   ITEM CODIGO
                 $$.traducao = "";
             }
             ;
-
-ITEM        : BLOCO
-            {
-                $$.traducao = $1.traducao;
-            }
-            |
-            CMD
-            {
-                $$.traducao = $1.traducao;
-            }
-            ;
             
-BLOCOS      : BLOCO BLOCOS
+ITEM        : BLOCO_DECL
             {
-                $$.traducao =  $1.traducao + $2.traducao;
+                $$.traducao = $1.traducao;
             }
-            |
+            | CMD
             {
-                $$.traducao = "";
+                $$.traducao = $1.traducao;
             }
             ;
 
-BLOCO       : TK_TIPO TK_ID '{' { entraEscopo(); } CMDS '}' FIM_LINHA // p ele pegar bloco com espaço
+BLOCO_DECL  : TK_TIPO TK_ID '{' { entraEscopo(); } CMDS '}' FIM_LINHA
             {
-                $$.traducao =  $1.label + " " + $2.label + "{\n" + $5.traducao + "}\n";
+                $$.tipo = pegaTipo($1.label); 
+                $$.traducao =  $$.tipo + " " + $2.label + "(){\n" + $5.traducao + "}\n"; 
                 printTabelaSimbolos();
                 saiEscopo();
-                if(debug) cout << "[DEBUG] Bloco identificado.\n";
+                if(debug) cout << "[DEBUG] Bloco de declaração identificado.\n";
             }
-            |
-            TK_TIPO TK_ID '{' { entraEscopo(); } CMDS '}' // p ele pegar último bloco caso não tenha espaço
+            | TK_TIPO TK_ID '{' { entraEscopo(); } CMDS '}' // p ele pegar último bloco caso não tenha espaço
             {
-                $$.traducao =  $1.label + " " + $2.label + "{\n" + $5.traducao + "}\n";
-                printTabelaSimbolos(); 
+
+                $$.tipo = pegaTipo($1.label);
+                $$.traducao =  $$.tipo + " " + $2.label + "(){\n" + $5.traducao + "}\n";
+                printTabelaSimbolos();
                 saiEscopo();
-                if(debug) cout << "[DEBUG] Bloco identificado.\n";
+                if(debug) cout << "[DEBUG] Bloco de declaração identificado.\n";
             }
-            | FIM_LINHA // p ele pegar linha entre blocos
+            | FIM_LINHA
             {
                 $$.traducao = "";
+            }
+            ;
+
+BLOCO       : '{' { entraEscopo(); } CMDS '}'
+            {
+                $$.traducao = $3.traducao;
+                saiEscopo();
             }
             ;
 
@@ -150,12 +154,19 @@ CMD         : EXP FIM_LINHA  { $$.traducao = $1.traducao; }
             | ATR FIM_LINHA  { $$.traducao = $1.traducao; }
             | EXP            { $$.traducao = $1.traducao; }
             | FIM_LINHA      { $$.traducao = "";          }
+            | TK_IF '(' EXP ')' BLOCO
+            {
+                string rotuloFimIf = novo_rotulo();
+                $$.traducao = $3.traducao +
+                              "\tif (!" + $3.label + ") goto " + rotuloFimIf + ";\n" + 
+                              $5.traducao + rotuloFimIf + ":\n"; 
+            }
             ;
 
 
-DECL        : TK_TIPO TK_ID 
-            { 
-                insereFixasTabelaSimbolos($2.label, $1.label); 
+DECL        : TK_TIPO TK_ID
+            {
+                insereFixasTabelaSimbolos($2.label, $1.label);
                 $$.traducao = "";
             }
             ;
@@ -262,7 +273,7 @@ EXP         : EXP '+' TERMO
                 }
                 else if($1.tipo == "bool" || $3.tipo == "bool")
                     yyerror("Operandos inválidos\n");
-                   
+                    
                 $$.traducao = $1.traducao + $3.traducao +
                 "\t" + $$.label + " = " + $1.label + " > " + $3.label + ";\n";
             }
@@ -310,7 +321,6 @@ EXP         : EXP '+' TERMO
                 else if($1.tipo == "bool" || $3.tipo == "bool")
                     yyerror("Operandos inválidos\n");
                 
-
                 $$.traducao = $1.traducao + $3.traducao +
                 "\t" + $$.label + " = " + $1.label + " <= " + $3.label + ";\n";
             }
@@ -327,7 +337,7 @@ EXP         : EXP '+' TERMO
                     yyerror("Operandos inválidos\n");
                 
                 $$.traducao = $1.traducao + $3.traducao +
-                "\t" + $$.label + " = " + $1.label + " != " + $3.label + ";\n";           
+                "\t" + $$.label + " = " + $1.label + " != " + $3.label + ";\n";          
             }
             | EXP TK_IGUAL TERMO 
             {
@@ -342,7 +352,7 @@ EXP         : EXP '+' TERMO
                     yyerror("Operandos inválidos\n");
                 
                 $$.traducao = $1.traducao + $3.traducao +
-                "\t" + $$.label + " = " + $1.label + " == " + $3.label + ";\n";           
+                "\t" + $$.label + " = " + $1.label + " == " + $3.label + ";\n";          
             }
             | EXP TK_E_LOGICO TERMO
             {
@@ -366,18 +376,18 @@ EXP         : EXP '+' TERMO
                 $$.traducao = $1.traducao + $3.traducao +
                 "\t" + $$.label + " = " + $1.label + " || " + $3.label + ";\n";  
             }
-            | TERMO         
+            | TERMO             
             { 
                 $$.label = $1.label;
                 $$.traducao = $1.traducao;
-                $$.tipo = $1.tipo;      
+                $$.tipo = $1.tipo;        
             } 
             ;
 
 TERMO       : TERMO '*' FATOR
             {   
                 $$.tipo = infereTipo($1.tipo, $3.tipo);
-                $$.label = insereTemporariasTabelaSimbolos("",  $$.tipo);
+                $$.label = insereTemporariasTabelaSimbolos("",   $$.tipo);
                 $$.traducao = $1.traducao + $3.traducao;
 
                 if($1.tipo == "int" && $3.tipo == "float") 
@@ -408,7 +418,7 @@ TERMO       : TERMO '*' FATOR
             | TERMO '/' FATOR 
             { 
                 $$.tipo = infereTipo($1.tipo, $3.tipo);
-                $$.label = insereTemporariasTabelaSimbolos("",  $$.tipo);
+                $$.label = insereTemporariasTabelaSimbolos("",   $$.tipo);
                 $$.traducao = $1.traducao + $3.traducao;
 
                 if($1.tipo == "int" && $3.tipo == "float") 
@@ -436,7 +446,7 @@ TERMO       : TERMO '*' FATOR
                     $$.traducao = "\t" + $$.label + " = " + $1.label + " / " + $3.label + ";\n";
                 }
             }
-            | FATOR          
+            | FATOR             
             { 
                 $$.label = $1.label;
                 $$.traducao = $1.traducao; 
@@ -530,8 +540,12 @@ FATOR       : '(' EXP ')'
 
 int yyparse();
 
+string novo_rotulo() {
+    return "L" + to_string(contador_rotulos++);
+}
+
 // Função para geração de variáveis temporárias
-string geraNomeTemp(string tipo)  // Dá para melhorar essa função
+string geraNomeTemp(string tipo)    // Dá para melhorar essa função
 {
     
     qntdVariaveisTemp++;
@@ -546,7 +560,7 @@ string geraNomeTemp(string tipo)  // Dá para melhorar essa função
         temporarias.insert({"T" + to_string(qntdVariaveisTemp), "char"});
     else // caso em que n tenha nenhum tipo atribuído - vamos inicializar "vazio" - ou em dinâmico
         temporarias.insert({"T" + to_string(qntdVariaveisTemp), "null"});
-     
+      
     return "T" + to_string(qntdVariaveisTemp); 
 }
 
@@ -622,6 +636,9 @@ TIPO_SIMBOLO pegaVariavelTabelaSimbolos(string nome)
             return pilhaTabelasSimbolos[i][nome];
         }
     }
+    // Adicionado para evitar warning de "no return statement"
+    yyerror("Variável '" + nome + "' não encontrada.");
+    return {};
 }
 
 // Função para printar 
@@ -652,7 +669,7 @@ string pegaTipo(string tipo)
     else if(tipo == "pp" || tipo == "bool")
         return "bool";
     else 
-        return "null";    
+        return "null";      
 }
 
 string infereTipo(string tipo1, string tipo2)
@@ -690,12 +707,12 @@ void saiEscopo()
 int main( int argc, char* argv[] )
 {   
     yyparse();
-	return 0;
+    return 0;
 }
 
 
 void yyerror( string MSG )
 {
-	cout << "Na linha " << yylinha << ": "<< MSG << endl;
-	exit (0);
-}				
+    cout << "Na linha " << yylinha << ": "<< MSG << endl;
+    exit (0);
+}

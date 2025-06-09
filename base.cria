@@ -1,7 +1,10 @@
-nmr X
-X = 10
-
 nmr x {
-    nmr L
-    L = 10 + X
+    nmr A
+    A = 5
+    nmr B
+    nmr C
+    se (A > 3) {
+        B = 5
+    }
+    C = 3
 } 
