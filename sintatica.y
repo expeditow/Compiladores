@@ -64,7 +64,7 @@ extern int yylinha;
 
 %%
 
-START 	    :  { entraEscopo(); } BLOCOS
+START 	    :  { entraEscopo(); } CODIGO
             {   
                 if(debug) cout << "[DEBUG] Árvore completa gerada. Tradução:\n";
 
@@ -80,6 +80,27 @@ START 	    :  { entraEscopo(); } BLOCOS
             |
             ;
 
+CODIGO      :   ITEM CODIGO
+            {
+                $$.traducao = $1.traducao + $2.traducao;
+            }
+            |
+            {
+                $$.traducao = "";
+            }
+            ;
+
+ITEM        : BLOCO
+            {
+                $$.traducao = $1.traducao;
+            }
+            |
+            CMD
+            {
+                $$.traducao = $1.traducao;
+            }
+            ;
+            
 BLOCOS      : BLOCO BLOCOS
             {
                 $$.traducao =  $1.traducao + $2.traducao;

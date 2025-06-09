@@ -1,8 +1,7 @@
+nmr X
+X = 10
+
 nmr x {
     nmr L
-    L = 10
+    L = 10 + X
 } 
-nmr y {
-    nmr X
-    X = 7 + 5
-}
