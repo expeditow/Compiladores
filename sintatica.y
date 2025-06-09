@@ -57,11 +57,11 @@ extern int yylinha;
 
 %}
 
-%token TK_TIPO TK_ID
-%token TK_INT TK_FLOAT TK_BOOLEAN TK_CHAR
-%token TK_MAIOR_IGUAL TK_MENOR_IGUAL TK_DIFERENTE TK_IGUAL TK_E_LOGICO TK_OU_LOGICO TK_NEGACAO
-%token TK_IF TK_ELSE
-%token FIM_LINHA
+%token TK_TIPO TK_ID    // número/nome
+%token TK_INT TK_FLOAT TK_BOOLEAN TK_CHAR // tipos
+%token TK_MAIOR_IGUAL TK_MENOR_IGUAL TK_DIFERENTE TK_IGUAL TK_E_LOGICO TK_OU_LOGICO TK_NEGACAO // operadores
+%token TK_IF TK_ELSE TK_WHILE TK_DO TK_FOR TK_IN TK_SWITCH TK_CASE TK_BREAK TK_DEFAULT // condicionais
+%token FIM_LINHA    // linha
 
 %start START
 
@@ -127,7 +127,8 @@ BLOCO_DECL  : TK_TIPO TK_ID '{' { entraEscopo(); } CMDS '}' FIM_LINHA
             ;
 
 BLOCO       : '{' { entraEscopo(); } CMDS '}'
-            {
+            {   
+                printTabelaSimbolos();
                 $$.traducao = $3.traducao;
                 saiEscopo();
             }
@@ -170,6 +171,57 @@ CMD         : EXP FIM_LINHA  { $$.traducao = $1.traducao; }
                               $7.traducao + // Tradução do BLOCO do 'else'
                               rotuloFimIfElse + ":\n"; // Rótulo para o fim de toda a estrutura
             }
+            | TK_WHILE '(' EXP ')' BLOCO
+            {
+                string rotuloTeste = novo_rotulo(); // Gera rótulo para o início do teste da condição
+                string rotuloFimWhile = novo_rotulo();  // Gera rótulo para o fim do loop (quando a condição é falsa)
+
+                $$.traducao = rotuloTeste + ":\n" +       // Rótulo de teste/início do loop
+                              $3.traducao +                 // Tradução da expressão (condição)
+                              "\tif (!" + $3.label + ") goto " + rotuloFimWhile + ";\n" + // Se cond. for falsa, salta para o fim
+                              $5.traducao +                 // Tradução do BLOCO do while (corpo do loop)
+                              "\tgoto " + rotuloTeste + ";\n" + // Volta para reavaliar a condição
+                              rotuloFimWhile + ":\n";     // Rótulo para onde o while termina
+            }
+            | TK_DO BLOCO TK_WHILE '(' EXP ')' FIM_LINHA
+            {
+            
+                string rotuloCorpo = novo_rotulo();     // Gera rótulo para o início do corpo do loop (onde a execução entra primeiro)
+                string rotuloFimDoWhile = novo_rotulo();  // Gera rótulo para o fim do loop (quando a condição é falsa)
+
+                $$.traducao = rotuloCorpo + ":\n" +   // Rótulo para o início do corpo
+                              $2.traducao +             // Tradução do BLOCO do do/while (corpo do loop)
+                              $5.traducao +             // Tradução da expressão (condição)
+                              "\tif (" + $5.label + ") goto " + rotuloCorpo + ";\n" + // Se cond. for VERDADEIRA, volta para o corpo
+                              rotuloFimDoWhile + ":\n"; // Rótulo para onde o do/while termina
+            }
+            |  TK_FOR '(' FOR_INICIA ';' EXP ';' FOR_INCREM ')' BLOCO // se parece com o if
+            {
+                string rotuloTeste = novo_rotulo();
+                string rotuloFimFor = novo_rotulo();
+
+                $$.traducao = $3.traducao +                 
+                              rotuloTeste + ":\n" +        
+                              $5.traducao +                
+                              "\tif (!" + $5.label + ") goto " + rotuloFimFor + ";\n" + 
+                              $9.traducao +                 
+                              $7.traducao +                 
+                              "\tgoto " + rotuloTeste + ";\n" + 
+                              rotuloFimFor + ":\n";         
+            }
+            | 
+            ;
+
+FOR_INICIA  : DECL { $$.traducao = $1.traducao; }
+            | ATR { $$.traducao = $1.traducao; }
+            | { $$.traducao = ""; }
+            ;
+FOR_INCREM  : ATR
+            { $$.traducao = $1.traducao; }
+            | EXP // Uma expressão que pode ter um efeito colateral, como i++
+            { $$.traducao = $1.traducao; }
+            | // vazio (permite 'for (init; cond; )')
+            { $$.traducao = ""; }
             ;
 
 
@@ -177,6 +229,22 @@ DECL        : TK_TIPO TK_ID
             {
                 insereFixasTabelaSimbolos($2.label, $1.label);
                 $$.traducao = "";
+            }
+            | TK_TIPO TK_ID '=' EXP
+            {
+                // AÇÃO PARA DECLARAÇÃO COM INICIALIZAÇÃO (nmr A = 5;)
+                insereFixasTabelaSimbolos($2.label, $1.label); // Insere a variável
+
+                TIPO_SIMBOLO varSimbolo = pegaVariavelTabelaSimbolos($2.label); // Pega o símbolo para a label gerada
+
+                // Verifica a compatibilidade de tipos
+                if (varSimbolo.tipoVariavel != pegaTipo($4.tipo))
+                    yyerror("Variavel '" + $2.label + "' nao suporta valor atribuido.");
+
+                // Gera o código C para declarar a variável e atribuir o valor
+                // Exemplo: '\tint T_A; T_A = T_val_5;'
+                $$.traducao = $4.traducao + // Código para calcular o valor da EXP (ex: T_val_5 = 5;)
+                              "\t" + varSimbolo.label + " = " + $4.label + ";\n"; // Atribuição inicial
             }
             ;
 
@@ -658,9 +726,9 @@ void printTabelaSimbolos()
         cout << "Escopo " << i << ":\n";
         for (const auto& pair : pilhaTabelasSimbolos[i]) {
             const TIPO_SIMBOLO& simbolo = pair.second;
-            std::cout << "  Nome: " << simbolo.nomeVariavel
+            cout << "  Nome: " << simbolo.nomeVariavel
                       << ", Tipo: " << simbolo.tipoVariavel
-                      << ", Label: " << simbolo.label << std::endl;
+                      << ", Label: " << simbolo.label << endl;
         }
     }
     cout << "-----------------------------------\n";

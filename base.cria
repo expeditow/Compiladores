@@ -1,10 +1,7 @@
 nmr x {
-    nmr A
-    A = 5
-    nmr B
-    se (A > 3) {
-        B = 5
-    } senao {
-        B = 10
+    nmr Z = 0
+    corre(nmr i = 0; i < 3 ; i = i + 1) {
+        nmr L
+        L = 10
     }
 } 

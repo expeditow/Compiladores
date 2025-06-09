@@ -50,6 +50,16 @@ ID {LETRA}({LETRA}|{NUM})*
 
 "se"        { return TK_IF;}
 "senao"     { return TK_ELSE; }
+"ainda"     { return TK_WHILE; }
+"mantem"    { return TK_DO; }
+"corre"     { return TK_FOR; }
+"em"        { return TK_IN; }
+"segue"     { return TK_SWITCH; }
+"visao"     { return TK_CASE; }
+"pare"      { return TK_BREAK;  } 
+"padrao"    { return TK_DEFAULT; } 
+
+
 "reto"      { yylval.label = yytext; return TK_BOOLEAN; }
 "torto"     { yylval.label = yytext; return TK_BOOLEAN; }
 {ID}		{ yylval.label = yytext; return TK_ID; }
