@@ -175,52 +175,21 @@ CMD         : EXP FIM_LINHA  { $$.traducao = $1.traducao; }
                               rotuloFimIfElse + ":\n"; // Rótulo para o fim de toda a estrutura
             }
             | TK_WHILE '(' EXP ')'
-            /* <<< AÇÃO INTERMEDIÁRIA AQUI (executada imediatamente) >>> */
+            /* preciso disso em tempo de execução, senão ele desce na árvoree n tem nada na pilha*/
             {
-                // 1. Gerar os rótulos de teste e fim do while
                 string rotuloTeste = novo_rotulo();
                 string rotuloFimWhile = novo_rotulo();
 
-                // 2. EMPILHAR ESSES RÓTULOS AGORA!
-                pilhaRotulosProxIteracao.push(rotuloTeste); // Para 'continue'
-                pilhaRotulosFimLoop.push(rotuloFimWhile);   // Para 'break'
+                pilhaRotulosProxIteracao.push(rotuloTeste);
+                pilhaRotulosFimLoop.push(rotuloFimWhile); 
 
-                // 3. Opcional: Se a ação final do WHILE precisar desses valores,
-                //    e você não quer depender do 'top()' das pilhas (embora seja comum),
-                //    você poderia passá-los como atributos desta "ação vazia".
-                //    Por simplicidade, vamos usar 'top()' na ação final.
             }
             BLOCO
-            /* <<< Ação FINAL do WHILE aqui >>> */
             {
-
-                // 2. RECUPERAR OS RÓTULOS QUE ESTAVAM NO TOPO ANTES DE DESEMPILHAR
-                //    (se o desempilhamento fosse feito no final do bloco,
-                //    teríamos que guardar os rótulos de outra forma.)
-
-                // Na verdade, a forma mais segura é pegar os rótulos ANTES de desempilhar.
-                // Ou, mais comum, a ação intermediária passa o rótulo para o não-terminal
-                // que a representa.
-
-                // Vamos usar a forma mais direta: a ação intermediária empilha,
-                // e a ação final usa o .top() ANTES do pop.
-
-                // ATENÇÃO: PARA FAZER ISSO, A REGRA INTERMEDIÁRIA PRECISA "SINTETIZAR"
-                // SEUS PRÓPRIOS VALORES PARA A AÇÃO FINAL.
-
-                // Vamos usar a refatoração mais robusta:
-                // TK_WHILE '(' EXP ')' CONTEXTO_LACO BLOCO { ... }
-                // Onde CONTEXTO_LACO é uma regra auxiliar que faz o empilhamento.
-                // E o BLOCO do lado direito de CONTEXTO_LACO está "dentro" do CONTEXTO_LACO.
-                //
-                // No seu caso, o TK_WHILE é mais simples:
-                // A ação do "meio" da regra do while será a que empilha.
-
-                // Ação final:
 
                 string rotuloTeste = pilhaRotulosProxIteracao.top(); // Rotulo para o continue
                 string rotuloFimWhile = pilhaRotulosFimLoop.top();   // Rotulo para o break
-                
+
                 $$.traducao = rotuloTeste + ":\n" +
                             $3.traducao + // Exp do While
                             "\tif (!" + $3.label + ") goto " + rotuloFimWhile + ";\n" +
@@ -232,25 +201,29 @@ CMD         : EXP FIM_LINHA  { $$.traducao = $1.traducao; }
                 pilhaRotulosProxIteracao.pop();
                 pilhaRotulosFimLoop.pop();
             }
-            | TK_DO BLOCO TK_WHILE '(' EXP ')' FIM_LINHA
+            | TK_DO
             {
-            
-                string rotuloCorpo = novo_rotulo();         // Rótulo para o início do corpo (onde a execução entra primeiro)
-                string rotuloTeste = novo_rotulo();         // Rótulo para o início do teste (destino do continue)
-                string rotuloFimDoWhile = novo_rotulo();    // Rótulo para o fim do loop (destino do break)
+                  string rotuloTeste = novo_rotulo();         // Destino do continue
+                  string rotuloFimDoWhile = novo_rotulo();    // Destino do break
 
-                // Empilha os rótulos antes de processar o BLOCO e EXP
-                pilhaRotulosProxIteracao.push(rotuloTeste); // Continue deve ir para o teste
-                pilhaRotulosFimLoop.push(rotuloFimDoWhile);
+                  pilhaRotulosProxIteracao.push(rotuloTeste);
+                  pilhaRotulosFimLoop.push(rotuloFimDoWhile);
 
-                $$.traducao = rotuloCorpo + ":\n" +     // Rótulo para o início do corpo
-                              $2.traducao +             // Tradução do BLOCO do do/while (corpo do loop)
-                              rotuloTeste + ":\n" +     // Rótulo do teste (destino do continue)
-                              $5.traducao +             // Tradução da expressão (condição)
-                              "\tif (" + $5.label + ") goto " + rotuloCorpo + ";\n" + // Se cond. for VERDADEIRA, volta para o corpo
-                              rotuloFimDoWhile + ":\n"; // Rótulo para onde o do/while termina
+            }
+            BLOCO TK_WHILE '(' EXP ')' FIM_LINHA
+            {
+                string rotuloTeste = pilhaRotulosProxIteracao.top();
+                string rotuloFimDoWhile = pilhaRotulosFimLoop.top();
 
-                // Desempilha os rótulos
+                string rotuloCorpo = novo_rotulo(); 
+
+                $$.traducao = rotuloCorpo + ":\n" +    
+                              $3.traducao +          
+                              rotuloTeste + ":\n" +    
+                              $6.traducao +           
+                              "\tif (" + $6.label + ") goto " + rotuloCorpo + ";\n" + 
+                              rotuloFimDoWhile + ":\n"; 
+
                 pilhaRotulosProxIteracao.pop();
                 pilhaRotulosFimLoop.pop();
             }

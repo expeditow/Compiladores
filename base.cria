@@ -1,8 +1,9 @@
-nmr x
-x = 0
-ainda (x < 5){
-  x = x + 1
-  se (x == 3){
+nmr i
+i = 0
+mantem {
+  i = i + 1
+  se (i == 2){
     pare
   }
-}
+  i = i + 10
+} ainda (i < 5)
