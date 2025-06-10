@@ -11,6 +11,9 @@ using namespace std;
 int qntdVariaveisTemp = 0;
 int contador_rotulos = 0;
 
+stack<string> pilhaRotulosFimLoop;      // Para 'break': salta para o fim do laço
+stack<string> pilhaRotulosProxIteracao; // Para 'continue': salta para o teste/incremento do laço
+
 struct atributos 
 {
     string label;       // A variável temporária atribuída
@@ -30,8 +33,8 @@ int yylex(void);
 void yyerror(string);
 
 set<pair<string,string>> temporarias;
-
 vector<map<string, TIPO_SIMBOLO>> pilhaTabelasSimbolos;
+stack<pair<string, string>> pilhaExprSwitch;
 
 bool verificaTabelaSimbolos(string nome);
 TIPO_SIMBOLO pegaVariavelTabelaSimbolos(string nome);
@@ -60,7 +63,7 @@ extern int yylinha;
 %token TK_TIPO TK_ID    // número/nome
 %token TK_INT TK_FLOAT TK_BOOLEAN TK_CHAR // tipos
 %token TK_MAIOR_IGUAL TK_MENOR_IGUAL TK_DIFERENTE TK_IGUAL TK_E_LOGICO TK_OU_LOGICO TK_NEGACAO // operadores
-%token TK_IF TK_ELSE TK_WHILE TK_DO TK_FOR TK_IN TK_SWITCH TK_CASE TK_BREAK TK_DEFAULT // condicionais
+%token TK_IF TK_ELSE TK_WHILE TK_DO TK_FOR TK_IN TK_SWITCH TK_CASE TK_BREAK TK_DEFAULT TK_CONTINUE// condicionais
 %token FIM_LINHA    // linha
 
 %start START
@@ -171,46 +174,127 @@ CMD         : EXP FIM_LINHA  { $$.traducao = $1.traducao; }
                               $7.traducao + // Tradução do BLOCO do 'else'
                               rotuloFimIfElse + ":\n"; // Rótulo para o fim de toda a estrutura
             }
-            | TK_WHILE '(' EXP ')' BLOCO
+            | TK_WHILE '(' EXP ')'
+            /* <<< AÇÃO INTERMEDIÁRIA AQUI (executada imediatamente) >>> */
             {
-                string rotuloTeste = novo_rotulo(); // Gera rótulo para o início do teste da condição
-                string rotuloFimWhile = novo_rotulo();  // Gera rótulo para o fim do loop (quando a condição é falsa)
+                // 1. Gerar os rótulos de teste e fim do while
+                string rotuloTeste = novo_rotulo();
+                string rotuloFimWhile = novo_rotulo();
 
-                $$.traducao = rotuloTeste + ":\n" +       // Rótulo de teste/início do loop
-                              $3.traducao +                 // Tradução da expressão (condição)
-                              "\tif (!" + $3.label + ") goto " + rotuloFimWhile + ";\n" + // Se cond. for falsa, salta para o fim
-                              $5.traducao +                 // Tradução do BLOCO do while (corpo do loop)
-                              "\tgoto " + rotuloTeste + ";\n" + // Volta para reavaliar a condição
-                              rotuloFimWhile + ":\n";     // Rótulo para onde o while termina
+                // 2. EMPILHAR ESSES RÓTULOS AGORA!
+                pilhaRotulosProxIteracao.push(rotuloTeste); // Para 'continue'
+                pilhaRotulosFimLoop.push(rotuloFimWhile);   // Para 'break'
+
+                // 3. Opcional: Se a ação final do WHILE precisar desses valores,
+                //    e você não quer depender do 'top()' das pilhas (embora seja comum),
+                //    você poderia passá-los como atributos desta "ação vazia".
+                //    Por simplicidade, vamos usar 'top()' na ação final.
+            }
+            BLOCO
+            /* <<< Ação FINAL do WHILE aqui >>> */
+            {
+
+                // 2. RECUPERAR OS RÓTULOS QUE ESTAVAM NO TOPO ANTES DE DESEMPILHAR
+                //    (se o desempilhamento fosse feito no final do bloco,
+                //    teríamos que guardar os rótulos de outra forma.)
+
+                // Na verdade, a forma mais segura é pegar os rótulos ANTES de desempilhar.
+                // Ou, mais comum, a ação intermediária passa o rótulo para o não-terminal
+                // que a representa.
+
+                // Vamos usar a forma mais direta: a ação intermediária empilha,
+                // e a ação final usa o .top() ANTES do pop.
+
+                // ATENÇÃO: PARA FAZER ISSO, A REGRA INTERMEDIÁRIA PRECISA "SINTETIZAR"
+                // SEUS PRÓPRIOS VALORES PARA A AÇÃO FINAL.
+
+                // Vamos usar a refatoração mais robusta:
+                // TK_WHILE '(' EXP ')' CONTEXTO_LACO BLOCO { ... }
+                // Onde CONTEXTO_LACO é uma regra auxiliar que faz o empilhamento.
+                // E o BLOCO do lado direito de CONTEXTO_LACO está "dentro" do CONTEXTO_LACO.
+                //
+                // No seu caso, o TK_WHILE é mais simples:
+                // A ação do "meio" da regra do while será a que empilha.
+
+                // Ação final:
+
+                string rotuloTeste = pilhaRotulosProxIteracao.top(); // Rotulo para o continue
+                string rotuloFimWhile = pilhaRotulosFimLoop.top();   // Rotulo para o break
+                
+                $$.traducao = rotuloTeste + ":\n" +
+                            $3.traducao + // Exp do While
+                            "\tif (!" + $3.label + ") goto " + rotuloFimWhile + ";\n" +
+                            $6.traducao + // Bloco do While (agora $6 porque a ação intermediária é $5)
+                            "\tgoto " + rotuloTeste + ";\n" +
+                            rotuloFimWhile + ":\n";
+
+                // Agora, desempilha.
+                pilhaRotulosProxIteracao.pop();
+                pilhaRotulosFimLoop.pop();
             }
             | TK_DO BLOCO TK_WHILE '(' EXP ')' FIM_LINHA
             {
             
-                string rotuloCorpo = novo_rotulo();     // Gera rótulo para o início do corpo do loop (onde a execução entra primeiro)
-                string rotuloFimDoWhile = novo_rotulo();  // Gera rótulo para o fim do loop (quando a condição é falsa)
+                string rotuloCorpo = novo_rotulo();         // Rótulo para o início do corpo (onde a execução entra primeiro)
+                string rotuloTeste = novo_rotulo();         // Rótulo para o início do teste (destino do continue)
+                string rotuloFimDoWhile = novo_rotulo();    // Rótulo para o fim do loop (destino do break)
 
-                $$.traducao = rotuloCorpo + ":\n" +   // Rótulo para o início do corpo
+                // Empilha os rótulos antes de processar o BLOCO e EXP
+                pilhaRotulosProxIteracao.push(rotuloTeste); // Continue deve ir para o teste
+                pilhaRotulosFimLoop.push(rotuloFimDoWhile);
+
+                $$.traducao = rotuloCorpo + ":\n" +     // Rótulo para o início do corpo
                               $2.traducao +             // Tradução do BLOCO do do/while (corpo do loop)
+                              rotuloTeste + ":\n" +     // Rótulo do teste (destino do continue)
                               $5.traducao +             // Tradução da expressão (condição)
                               "\tif (" + $5.label + ") goto " + rotuloCorpo + ";\n" + // Se cond. for VERDADEIRA, volta para o corpo
                               rotuloFimDoWhile + ":\n"; // Rótulo para onde o do/while termina
+
+                // Desempilha os rótulos
+                pilhaRotulosProxIteracao.pop();
+                pilhaRotulosFimLoop.pop();
             }
             |  TK_FOR '(' FOR_INICIA ';' EXP ';' FOR_INCREM ')' BLOCO // se parece com o if
             {
-                string rotuloTeste = novo_rotulo();
-                string rotuloFimFor = novo_rotulo();
+                string rotuloTeste = novo_rotulo();      // Rótulo para o teste da condição (destino do continue para a EXP)
+                string rotuloIncremento = novo_rotulo(); // Rótulo para o incremento (destino do continue após o corpo)
+                string rotuloFimFor = novo_rotulo();     // Rótulo para o fim do loop (destino do break)
 
-                $$.traducao = $3.traducao +                 
-                              rotuloTeste + ":\n" +        
-                              $5.traducao +                
-                              "\tif (!" + $5.label + ") goto " + rotuloFimFor + ";\n" + 
-                              $9.traducao +                 
-                              $7.traducao +                 
-                              "\tgoto " + rotuloTeste + ";\n" + 
-                              rotuloFimFor + ":\n";         
+                // Empilha os rótulos antes de processar o BLOCO
+                // Continue deve pular para a seção de incremento e depois para o teste
+                pilhaRotulosProxIteracao.push(rotuloIncremento);
+                pilhaRotulosFimLoop.push(rotuloFimFor);
+
+                $$.traducao = $3.traducao +              // Inicialização do FOR
+                              rotuloTeste + ":\n" +      // Rótulo para o início do teste
+                              $5.traducao +              // Condição do FOR
+                              "\tif (!" + $5.label + ") goto " + rotuloFimFor + ";\n" + // Se cond. falsa, salta para o fim
+                              $9.traducao +              // Tradução do BLOCO do FOR (corpo do loop)
+                              rotuloIncremento + ":\n" + // Rótulo para a seção de incremento (destino do continue)
+                              $7.traducao +              // Incremento do FOR
+                              "\tgoto " + rotuloTeste + ";\n" + // Volta para reavaliar a condição
+                              rotuloFimFor + ":\n";      // Rótulo para onde o for termina
+
+                // Desempilha os rótulos
+                pilhaRotulosProxIteracao.pop();
+                pilhaRotulosFimLoop.pop();
             }
-            | 
+            | TK_BREAK FIM_LINHA
+            {
+                if (pilhaRotulosFimLoop.empty()) {
+                    yyerror("Erro semântico: 'pare' (break) fora de um laço.");
+                }
+                $$.traducao = "\tgoto " + pilhaRotulosFimLoop.top() + ";\n";
+            }
+            | TK_CONTINUE FIM_LINHA
+            {
+                if (pilhaRotulosProxIteracao.empty()) {
+                    yyerror("Erro semântico: 'passa' (continue) fora de um laço.");
+                }
+                $$.traducao = "\tgoto " + pilhaRotulosProxIteracao.top() + ";\n";
+            }
             ;
+
 
 FOR_INICIA  : DECL { $$.traducao = $1.traducao; }
             | ATR { $$.traducao = $1.traducao; }

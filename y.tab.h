@@ -77,7 +77,8 @@ extern int yydebug;
     TK_CASE = 278,                 /* TK_CASE  */
     TK_BREAK = 279,                /* TK_BREAK  */
     TK_DEFAULT = 280,              /* TK_DEFAULT  */
-    FIM_LINHA = 281                /* FIM_LINHA  */
+    TK_CONTINUE = 281,             /* TK_CONTINUE  */
+    FIM_LINHA = 282                /* FIM_LINHA  */
   };
   typedef enum yytokentype yytoken_kind_t;
 #endif
@@ -109,7 +110,8 @@ extern int yydebug;
 #define TK_CASE 278
 #define TK_BREAK 279
 #define TK_DEFAULT 280
-#define FIM_LINHA 281
+#define TK_CONTINUE 281
+#define FIM_LINHA 282
 
 /* Value type.  */
 #if ! defined YYSTYPE && ! defined YYSTYPE_IS_DECLARED

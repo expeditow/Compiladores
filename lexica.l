@@ -21,7 +21,7 @@ ID {LETRA}({LETRA}|{NUM})*
 
 [(){}[\];,]	{ return *yytext; }
 [+\-*/]		{ return *yytext; }
-
+":"         { return *yytext; }
 
 {NUM}		{ yylval.traducao = yytext; return TK_INT; }
 {REAL}		{ yylval.traducao = yytext; return TK_FLOAT;}
@@ -54,11 +54,12 @@ ID {LETRA}({LETRA}|{NUM})*
 "mantem"    { return TK_DO; }
 "corre"     { return TK_FOR; }
 "em"        { return TK_IN; }
-"segue"     { return TK_SWITCH; }
+
+"pega"      { return TK_SWITCH; }
 "visao"     { return TK_CASE; }
 "pare"      { return TK_BREAK;  } 
 "padrao"    { return TK_DEFAULT; } 
-
+"continua"  { return TK_CONTINUE; }
 
 "reto"      { yylval.label = yytext; return TK_BOOLEAN; }
 "torto"     { yylval.label = yytext; return TK_BOOLEAN; }
