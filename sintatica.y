@@ -202,15 +202,34 @@ CMD         : EXP FIM_LINHA  { $$.traducao = $1.traducao; }
                 pilhaRotulosFimLoop.pop();
             }
             | TK_DO
-            {
+              {
+                  // Rótulos que serão o destino do break e continue
                   string rotuloTeste = novo_rotulo();         // Destino do continue
                   string rotuloFimDoWhile = novo_rotulo();    // Destino do break
 
                   pilhaRotulosProxIteracao.push(rotuloTeste);
                   pilhaRotulosFimLoop.push(rotuloFimDoWhile);
+              }
+              BLOCO TK_WHILE '(' EXP ')' FIM_LINHA
+            {
 
+                string rotuloTeste = pilhaRotulosProxIteracao.top();
+                string rotuloFimDoWhile = pilhaRotulosFimLoop.top();
+
+                string rotuloCorpo = novo_rotulo();
+
+                $$.traducao = rotuloCorpo + ":\n" +      
+                              $3.traducao +             
+                              rotuloTeste + ":\n" +     
+                              $6.traducao +             
+                              "\tif (" + $6.label + ") goto " + rotuloCorpo + ";\n" + 
+                              rotuloFimDoWhile + ":\n";
+
+                // Desempilha os rótulos.
+                pilhaRotulosProxIteracao.pop();
+                pilhaRotulosFimLoop.pop();
             }
-            BLOCO TK_WHILE '(' EXP ')' FIM_LINHA
+            | BLOCO TK_WHILE '(' EXP ')' FIM_LINHA
             {
                 string rotuloTeste = pilhaRotulosProxIteracao.top();
                 string rotuloFimDoWhile = pilhaRotulosFimLoop.top();
@@ -227,30 +246,36 @@ CMD         : EXP FIM_LINHA  { $$.traducao = $1.traducao; }
                 pilhaRotulosProxIteracao.pop();
                 pilhaRotulosFimLoop.pop();
             }
-            |  TK_FOR '(' FOR_INICIA ';' EXP ';' FOR_INCREM ')' BLOCO // se parece com o if
+            | TK_FOR '(' FOR_INICIA ';' EXP ';' FOR_INCREM ')'
             {
-                string rotuloTeste = novo_rotulo();      // Rótulo para o teste da condição (destino do continue para a EXP)
-                string rotuloIncremento = novo_rotulo(); // Rótulo para o incremento (destino do continue após o corpo)
-                string rotuloFimFor = novo_rotulo();     // Rótulo para o fim do loop (destino do break)
+                  string rotuloIncremento = novo_rotulo();
+                  string rotuloFimFor = novo_rotulo();
 
-                // Empilha os rótulos antes de processar o BLOCO
-                // Continue deve pular para a seção de incremento e depois para o teste
-                pilhaRotulosProxIteracao.push(rotuloIncremento);
-                pilhaRotulosFimLoop.push(rotuloFimFor);
+                  pilhaRotulosProxIteracao.push(rotuloIncremento);
+                  pilhaRotulosFimLoop.push(rotuloFimFor);
 
-                $$.traducao = $3.traducao +              // Inicialização do FOR
-                              rotuloTeste + ":\n" +      // Rótulo para o início do teste
-                              $5.traducao +              // Condição do FOR
-                              "\tif (!" + $5.label + ") goto " + rotuloFimFor + ";\n" + // Se cond. falsa, salta para o fim
-                              $9.traducao +              // Tradução do BLOCO do FOR (corpo do loop)
-                              rotuloIncremento + ":\n" + // Rótulo para a seção de incremento (destino do continue)
-                              $7.traducao +              // Incremento do FOR
-                              "\tgoto " + rotuloTeste + ";\n" + // Volta para reavaliar a condição
-                              rotuloFimFor + ":\n";      // Rótulo para onde o for termina
+            }
+            BLOCO 
+            {
 
-                // Desempilha os rótulos
+                string rotuloIncrementoReal = pilhaRotulosProxIteracao.top();
+                string rotuloFimForReal = pilhaRotulosFimLoop.top();
+
+                string rotuloTesteReal = novo_rotulo();
+
+                $$.traducao = $3.traducao;               
+                $$.traducao += rotuloTesteReal + ":\n";  
+                $$.traducao += $5.traducao;              
+                $$.traducao += "\tif (!" + $5.label + ") goto " + rotuloFimForReal + ";\n"; 
+                $$.traducao += $10.traducao;             
+                $$.traducao += rotuloIncrementoReal + ":\n"; 
+                $$.traducao += $7.traducao;             
+                $$.traducao += "\tgoto " + rotuloTesteReal + ";\n"; 
+                $$.traducao += rotuloFimForReal + ":\n";      
+
                 pilhaRotulosProxIteracao.pop();
                 pilhaRotulosFimLoop.pop();
+
             }
             | TK_BREAK FIM_LINHA
             {

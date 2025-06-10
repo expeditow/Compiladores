@@ -1,9 +1,9 @@
-nmr i
-i = 0
+nmr k
+k = 0
 mantem {
-  i = i + 1
-  se (i == 2){
-    pare
+  k = k + 1
+  se (k == 1){
+    continua
   }
-  i = i + 10
-} ainda (i < 5)
+  k = k + 100
+} ainda (k < 3)
