@@ -61,6 +61,8 @@ ID {LETRA}({LETRA}|{NUM})*
 "padrao"    { return TK_DEFAULT; } 
 "continua"  { return TK_CONTINUE; }
 
+"ouve"      { return TK_SCAN; }
+"fala"      { return TK_PRINT; }
 "reto"      { yylval.label = yytext; return TK_BOOLEAN; }
 "torto"     { yylval.label = yytext; return TK_BOOLEAN; }
 {ID}		{ yylval.label = yytext; return TK_ID; }

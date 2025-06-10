@@ -78,7 +78,9 @@ extern int yydebug;
     TK_BREAK = 279,                /* TK_BREAK  */
     TK_DEFAULT = 280,              /* TK_DEFAULT  */
     TK_CONTINUE = 281,             /* TK_CONTINUE  */
-    FIM_LINHA = 282                /* FIM_LINHA  */
+    TK_PRINT = 282,                /* TK_PRINT  */
+    TK_SCAN = 283,                 /* TK_SCAN  */
+    FIM_LINHA = 284                /* FIM_LINHA  */
   };
   typedef enum yytokentype yytoken_kind_t;
 #endif
@@ -111,7 +113,9 @@ extern int yydebug;
 #define TK_BREAK 279
 #define TK_DEFAULT 280
 #define TK_CONTINUE 281
-#define FIM_LINHA 282
+#define TK_PRINT 282
+#define TK_SCAN 283
+#define FIM_LINHA 284
 
 /* Value type.  */
 #if ! defined YYSTYPE && ! defined YYSTYPE_IS_DECLARED

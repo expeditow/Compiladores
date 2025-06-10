@@ -64,6 +64,7 @@ extern int yylinha;
 %token TK_INT TK_FLOAT TK_BOOLEAN TK_CHAR // tipos
 %token TK_MAIOR_IGUAL TK_MENOR_IGUAL TK_DIFERENTE TK_IGUAL TK_E_LOGICO TK_OU_LOGICO TK_NEGACAO // operadores
 %token TK_IF TK_ELSE TK_WHILE TK_DO TK_FOR TK_IN TK_SWITCH TK_CASE TK_BREAK TK_DEFAULT TK_CONTINUE// condicionais
+%token TK_PRINT TK_SCAN
 %token FIM_LINHA    // linha
 
 %start START
@@ -193,7 +194,7 @@ CMD         : EXP FIM_LINHA  { $$.traducao = $1.traducao; }
                 $$.traducao = rotuloTeste + ":\n" +
                             $3.traducao + // Exp do While
                             "\tif (!" + $3.label + ") goto " + rotuloFimWhile + ";\n" +
-                            $6.traducao + // Bloco do While (agora $6 porque a ação intermediária é $5)
+                            $6.traducao +
                             "\tgoto " + rotuloTeste + ";\n" +
                             rotuloFimWhile + ":\n";
 
@@ -291,6 +292,48 @@ CMD         : EXP FIM_LINHA  { $$.traducao = $1.traducao; }
                 }
                 $$.traducao = "\tgoto " + pilhaRotulosProxIteracao.top() + ";\n";
             }
+            | TK_PRINT '(' EXP ')' FIM_LINHA
+            {
+                string formato = "";
+                if ($3.tipo == "int") {
+                    formato = "%d";
+                } else if ($3.tipo == "float") {
+                    formato = "%f";
+                } else if ($3.tipo == "char") {
+                    formato = "%c";
+                } else if ($3.tipo == "bool") { 
+                    formato = "%d";
+                } else {
+                    yyerror("Tipo inválido para 'fala' (print): " + $3.tipo);
+                }
+
+                $$.traducao = $3.traducao + "\tprintf(\"" + formato + "\\n\", " + $3.label + ");\n";
+            }
+            | TK_SCAN '(' TK_ID ')' FIM_LINHA
+            {
+
+                TIPO_SIMBOLO varSimbolo;
+                if (!verificaTabelaSimbolos($3.label)) {
+                    yyerror("Variável '" + $3.label + "' não declarada para 'ouve' (scan).");
+                } else {
+                    varSimbolo = pegaVariavelTabelaSimbolos($3.label);
+                }
+
+                string formato = "";
+                if (varSimbolo.tipoVariavel == "int") {
+                    formato = "%d";
+                } else if (varSimbolo.tipoVariavel == "float") {
+                    formato = "%f";
+                } else if (varSimbolo.tipoVariavel == "char") {
+                    formato = "%c";
+                } else if (varSimbolo.tipoVariavel == "bool") { // Boleanos são lidos como int (0 ou 1)
+                    formato = "%d";
+                } else {
+                    yyerror("Tipo inválido para 'ouve' (scan): " + varSimbolo.tipoVariavel);
+                }
+
+                $$.traducao = "\tscanf(\"" + formato + "\", &" + varSimbolo.label + ");\n";
+            }
             ;
 
 
@@ -324,8 +367,7 @@ DECL        : TK_TIPO TK_ID
                     yyerror("Variavel '" + $2.label + "' nao suporta valor atribuido.");
 
                 // Gera o código C para declarar a variável e atribuir o valor
-                // Exemplo: '\tint T_A; T_A = T_val_5;'
-                $$.traducao = $4.traducao + // Código para calcular o valor da EXP (ex: T_val_5 = 5;)
+                $$.traducao = $4.traducao + 
                               "\t" + varSimbolo.label + " = " + $4.label + ";\n"; // Atribuição inicial
             }
             ;
