@@ -490,7 +490,7 @@ EXP         : EXP '+' TERMO
                     string erro = "[ERRO] Operação '>' inválida entre tipos " + $1.tipo + " e " + $3.tipo;
                     yyerror(erro);
                 }
-                else if($1.tipo == "bool" || $3.tipo == "bool")
+                else if($1.tipo == "bool" || $3.tipo == "bool" || $1.tipo == "string" || $3.tipo == "string" )
                     yyerror("Operandos inválidos\n");
                     
                 $$.traducao = $1.traducao + $3.traducao +
@@ -506,7 +506,7 @@ EXP         : EXP '+' TERMO
                     string erro = "[ERRO] Operação '<' inválida entre tipos " + $1.tipo + " e " + $3.tipo;
                     yyerror(erro);
                 }
-                else if($1.tipo == "bool" || $3.tipo == "bool")
+                else if($1.tipo == "bool" || $3.tipo == "bool" || $1.tipo == "string" || $3.tipo == "string")
                     yyerror("Operandos inválidos\n");
                 
                 $$.traducao = $1.traducao + $3.traducao +
@@ -521,7 +521,7 @@ EXP         : EXP '+' TERMO
                     string erro = "[ERRO] Operação '>=' inválida entre tipos " + $1.tipo + " e " + $3.tipo;
                     yyerror(erro);
                 }
-                else if($1.tipo == "bool" || $3.tipo == "bool")
+                else if($1.tipo == "bool" || $3.tipo == "bool" || $1.tipo == "string" || $3.tipo == "string")
                     yyerror("Operandos inválidos\n");
                 
                 $$.traducao = $1.traducao + $3.traducao +
@@ -537,7 +537,7 @@ EXP         : EXP '+' TERMO
                     string erro = "[ERRO] Operação '<=' inválida entre tipos " + $1.tipo + " e " + $3.tipo;
                     yyerror(erro);
                 }
-                else if($1.tipo == "bool" || $3.tipo == "bool")
+                else if($1.tipo == "bool" || $3.tipo == "bool" || $1.tipo == "string" || $3.tipo == "string")
                     yyerror("Operandos inválidos\n");
                 
                 $$.traducao = $1.traducao + $3.traducao +
@@ -552,7 +552,7 @@ EXP         : EXP '+' TERMO
                     string erro = "[ERRO] Operação '!=' inválida entre tipos " + $1.tipo + " e " + $3.tipo;
                     yyerror(erro);
                 }
-                else if($1.tipo == "bool" || $3.tipo == "bool")
+                else if($1.tipo == "bool" || $3.tipo == "bool" || $1.tipo == "string" || $3.tipo == "string")
                     yyerror("Operandos inválidos\n");
                 
                 $$.traducao = $1.traducao + $3.traducao +
@@ -567,7 +567,7 @@ EXP         : EXP '+' TERMO
                         string erro = "[ERRO] Operação '==' inválida entre tipos " + $1.tipo + " e " + $3.tipo;
                         yyerror(erro);
                     }
-                else if($1.tipo == "bool" || $3.tipo == "bool")
+                else if($1.tipo == "bool" || $3.tipo == "bool" || $1.tipo == "string" || $3.tipo == "string")
                     yyerror("Operandos inválidos\n");
                 
                 $$.traducao = $1.traducao + $3.traducao +
@@ -624,7 +624,7 @@ TERMO       : TERMO '*' FATOR
                     $$.traducao += "\t" + temporario + " = (float) " + $3.label + ";\n" + 
                     "\t" + $$.label + " = " + $1.label + " * " + temporario + ";\n"; 
                 }
-                else if($1.tipo == "bool" || $3.tipo == "bool")
+                else if($1.tipo == "bool" || $3.tipo == "bool" || $1.tipo == "string" || $3.tipo == "string")
                 {
                     string erro = "[ERRO] Operação '*' inválida entre tipos " + $1.tipo + " e " + $3.tipo;
                     yyerror(erro);
@@ -655,7 +655,7 @@ TERMO       : TERMO '*' FATOR
                     $$.traducao += "\t" + temporario + " = (float) " + $3.label + ";\n" + 
                     "\t" + $$.label + " = " + $1.label + " / " + temporario + ";\n"; 
                 }
-                else if($1.tipo == "bool" || $3.tipo == "bool")
+                else if($1.tipo == "bool" || $3.tipo == "bool" || $1.tipo == "string" || $3.tipo == "string")
                 {
                     string erro = "[ERRO] Operação '/' inválida entre tipos " + $1.tipo + " e " + $3.tipo;
                     yyerror(erro);

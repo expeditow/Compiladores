@@ -1990,7 +1990,7 @@ yyreduce:
                     string erro = "[ERRO] Operação '>' inválida entre tipos " + yyvsp[-2].tipo + " e " + yyvsp[0].tipo;
                     yyerror(erro);
                 }
-                else if(yyvsp[-2].tipo == "bool" || yyvsp[0].tipo == "bool")
+                else if(yyvsp[-2].tipo == "bool" || yyvsp[0].tipo == "bool" || yyvsp[-2].tipo == "string" || yyvsp[0].tipo == "string" )
                     yyerror("Operandos inválidos\n");
                     
                 yyval.traducao = yyvsp[-2].traducao + yyvsp[0].traducao +
@@ -2010,7 +2010,7 @@ yyreduce:
                     string erro = "[ERRO] Operação '<' inválida entre tipos " + yyvsp[-2].tipo + " e " + yyvsp[0].tipo;
                     yyerror(erro);
                 }
-                else if(yyvsp[-2].tipo == "bool" || yyvsp[0].tipo == "bool")
+                else if(yyvsp[-2].tipo == "bool" || yyvsp[0].tipo == "bool" || yyvsp[-2].tipo == "string" || yyvsp[0].tipo == "string")
                     yyerror("Operandos inválidos\n");
                 
                 yyval.traducao = yyvsp[-2].traducao + yyvsp[0].traducao +
@@ -2029,7 +2029,7 @@ yyreduce:
                     string erro = "[ERRO] Operação '>=' inválida entre tipos " + yyvsp[-2].tipo + " e " + yyvsp[0].tipo;
                     yyerror(erro);
                 }
-                else if(yyvsp[-2].tipo == "bool" || yyvsp[0].tipo == "bool")
+                else if(yyvsp[-2].tipo == "bool" || yyvsp[0].tipo == "bool" || yyvsp[-2].tipo == "string" || yyvsp[0].tipo == "string")
                     yyerror("Operandos inválidos\n");
                 
                 yyval.traducao = yyvsp[-2].traducao + yyvsp[0].traducao +
@@ -2049,7 +2049,7 @@ yyreduce:
                     string erro = "[ERRO] Operação '<=' inválida entre tipos " + yyvsp[-2].tipo + " e " + yyvsp[0].tipo;
                     yyerror(erro);
                 }
-                else if(yyvsp[-2].tipo == "bool" || yyvsp[0].tipo == "bool")
+                else if(yyvsp[-2].tipo == "bool" || yyvsp[0].tipo == "bool" || yyvsp[-2].tipo == "string" || yyvsp[0].tipo == "string")
                     yyerror("Operandos inválidos\n");
                 
                 yyval.traducao = yyvsp[-2].traducao + yyvsp[0].traducao +
@@ -2068,7 +2068,7 @@ yyreduce:
                     string erro = "[ERRO] Operação '!=' inválida entre tipos " + yyvsp[-2].tipo + " e " + yyvsp[0].tipo;
                     yyerror(erro);
                 }
-                else if(yyvsp[-2].tipo == "bool" || yyvsp[0].tipo == "bool")
+                else if(yyvsp[-2].tipo == "bool" || yyvsp[0].tipo == "bool" || yyvsp[-2].tipo == "string" || yyvsp[0].tipo == "string")
                     yyerror("Operandos inválidos\n");
                 
                 yyval.traducao = yyvsp[-2].traducao + yyvsp[0].traducao +
@@ -2087,7 +2087,7 @@ yyreduce:
                         string erro = "[ERRO] Operação '==' inválida entre tipos " + yyvsp[-2].tipo + " e " + yyvsp[0].tipo;
                         yyerror(erro);
                     }
-                else if(yyvsp[-2].tipo == "bool" || yyvsp[0].tipo == "bool")
+                else if(yyvsp[-2].tipo == "bool" || yyvsp[0].tipo == "bool" || yyvsp[-2].tipo == "string" || yyvsp[0].tipo == "string")
                     yyerror("Operandos inválidos\n");
                 
                 yyval.traducao = yyvsp[-2].traducao + yyvsp[0].traducao +
@@ -2158,7 +2158,7 @@ yyreduce:
                     yyval.traducao += "\t" + temporario + " = (float) " + yyvsp[0].label + ";\n" + 
                     "\t" + yyval.label + " = " + yyvsp[-2].label + " * " + temporario + ";\n"; 
                 }
-                else if(yyvsp[-2].tipo == "bool" || yyvsp[0].tipo == "bool")
+                else if(yyvsp[-2].tipo == "bool" || yyvsp[0].tipo == "bool" || yyvsp[-2].tipo == "string" || yyvsp[0].tipo == "string")
                 {
                     string erro = "[ERRO] Operação '*' inválida entre tipos " + yyvsp[-2].tipo + " e " + yyvsp[0].tipo;
                     yyerror(erro);
@@ -2193,7 +2193,7 @@ yyreduce:
                     yyval.traducao += "\t" + temporario + " = (float) " + yyvsp[0].label + ";\n" + 
                     "\t" + yyval.label + " = " + yyvsp[-2].label + " / " + temporario + ";\n"; 
                 }
-                else if(yyvsp[-2].tipo == "bool" || yyvsp[0].tipo == "bool")
+                else if(yyvsp[-2].tipo == "bool" || yyvsp[0].tipo == "bool" || yyvsp[-2].tipo == "string" || yyvsp[0].tipo == "string")
                 {
                     string erro = "[ERRO] Operação '/' inválida entre tipos " + yyvsp[-2].tipo + " e " + yyvsp[0].tipo;
                     yyerror(erro);

@@ -1,3 +1,10 @@
-falada st1 = "oi"
-nmr x = 1
-nmr y = x + st1
+nmr x =1
+letra y = 'i'
+nmr teste{
+    nmr x
+    x = 2
+    falada st1 = "oi"
+    corre(nmr i = 0;i<10;i = i + i){
+        pp bool
+    }
+}
