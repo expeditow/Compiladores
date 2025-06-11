@@ -52,7 +52,7 @@ string pegaTipo(string tipo);
 string infereTipo(string tipo1, string tipo2);
 string pegaBooleano(string valor);
 
-bool debug = false;
+bool debug = true;
 #define true 1
 #define false 0
 
@@ -61,7 +61,7 @@ extern int yylinha;
 %}
 
 %token TK_TIPO TK_ID    // número/nome
-%token TK_INT TK_FLOAT TK_BOOLEAN TK_CHAR // tipos
+%token TK_INT TK_FLOAT TK_BOOLEAN TK_CHAR TK_STRING// tipos
 %token TK_MAIOR_IGUAL TK_MENOR_IGUAL TK_DIFERENTE TK_IGUAL TK_E_LOGICO TK_OU_LOGICO TK_NEGACAO // operadores
 %token TK_IF TK_ELSE TK_WHILE TK_DO TK_FOR TK_IN TK_SWITCH TK_CASE TK_BREAK TK_DEFAULT TK_CONTINUE// condicionais
 %token TK_PRINT TK_SCAN
@@ -72,20 +72,23 @@ extern int yylinha;
 
 %%
 
-START       :  { entraEscopo(); } CODIGO
-            {
-                if(debug) cout << "[DEBUG] Árvore completa gerada. Tradução:\n";
+    START       :  { entraEscopo(); } CODIGO
+                {
+                    if(debug) cout << "[DEBUG] Árvore completa gerada. Tradução:\n";
 
-                string defines = "\n\t#define true 1\n\t#define false 0\n\n\n";
-                string declaracoes = "";
-                for(auto i: temporarias){
-                    declaracoes += "\t" + i.second + " " + i.first + ";\n";
+                    string defines = "\n\t#define true 1\n\t#define false 0\n\n\n";
+                    string declaracoes = "";
+                    for(auto i: temporarias){
+                         if(i.second == "string" || i.second == "char_array")
+                          declaracoes += "\tchar " + i.first + "[100];\n"; // tamanho fixo 100, pode melhorar
+                        else
+                          declaracoes += "\t" + i.second + " " + i.first + ";\n";
+                    }
+                    cout << defines << declaracoes << endl << $2.traducao << endl;
+                    saiEscopo();
                 }
-                cout << defines << declaracoes << endl << $2.traducao << endl;
-                saiEscopo();
-            }
-            |
-            ;
+                |
+                ;
 
 CODIGO      :  ITEM CODIGO
             {
@@ -350,25 +353,31 @@ FOR_INCREM  : ATR
             ;
 
 
-DECL        : TK_TIPO TK_ID
+DECL        : TK_TIPO TK_ID 
             {
-                insereFixasTabelaSimbolos($2.label, $1.label);
-                $$.traducao = "";
+               if($1.label == "falada") {
+            insereFixasTabelaSimbolos($2.label, "string");  // registra tipo string na tabela
+        } else {
+            insereFixasTabelaSimbolos($2.label, $1.label);
+        }
+        $$.traducao = ""; // declaração será feita no final no start
             }
             | TK_TIPO TK_ID '=' EXP
             {
-                // AÇÃO PARA DECLARAÇÃO COM INICIALIZAÇÃO (nmr A = 5;)
-                insereFixasTabelaSimbolos($2.label, $1.label); // Insere a variável
+                insereFixasTabelaSimbolos($2.label, $1.label);
 
-                TIPO_SIMBOLO varSimbolo = pegaVariavelTabelaSimbolos($2.label); // Pega o símbolo para a label gerada
+                TIPO_SIMBOLO varSimbolo = pegaVariavelTabelaSimbolos($2.label);
 
-                // Verifica a compatibilidade de tipos
-                if (varSimbolo.tipoVariavel != pegaTipo($4.tipo))
-                    yyerror("Variavel '" + $2.label + "' nao suporta valor atribuido.");
+                if (varSimbolo.tipoVariavel != pegaTipo($4.tipo)) {
+                    yyerror("Variável '" + $2.label + "' não suporta valor atribuído.");
+                }
 
-                // Gera o código C para declarar a variável e atribuir o valor
-                $$.traducao = $4.traducao + 
-                              "\t" + varSimbolo.label + " = " + $4.label + ";\n"; // Atribuição inicial
+                if (varSimbolo.tipoVariavel == "string") {
+                    // inicialização de string com strcpy
+                    $$.traducao = $4.traducao + "\tstrcpy(" + varSimbolo.label + ", " + $4.label + ");\n";
+                } else {
+                    $$.traducao = $4.traducao + "\t" + varSimbolo.label + " = " + $4.label + ";\n";
+                }
             }
             ;
 
@@ -389,7 +398,11 @@ ATR         : TK_ID '=' EXP
                     yyerror("Variavel nao suporta valor atribuido");
 
                 $$.label = temp.label;
-                $$.traducao = $3.traducao + "\t" + temp.label + " = " + $3.label + ";\n";
+                if (temp.tipoVariavel == "string") {
+                    $$.traducao = $3.traducao + "\tstrcpy(" + temp.label + ", " + $3.label + ");\n";
+                } else {
+                    $$.traducao = $3.traducao + "\t" + temp.label + " = " + $3.label + ";\n";
+                }
 
             }
         
@@ -733,6 +746,11 @@ FATOR       : '(' EXP ')'
                 $$.traducao = "\t" + $$.label + " = " + $1.traducao + ";\n";
                 $$.tipo = "char"; 
             }
+            | TK_STRING{
+               $$.label = insereTemporariasTabelaSimbolos("", "falada");
+               $$.traducao = "\tstrcpy(" + $$.label + ", " + $1.traducao + ");\n";
+               $$.tipo = "string"; 
+            }
             ;
 
 %%
@@ -759,6 +777,8 @@ string geraNomeTemp(string tipo)    // Dá para melhorar essa função
         temporarias.insert({"T" + to_string(qntdVariaveisTemp), "int"});
     else if(tipo == "letra" || tipo == "char")
         temporarias.insert({"T" + to_string(qntdVariaveisTemp), "char"});
+    else if(tipo == "falada" || tipo == "string")
+        temporarias.insert({"T" + to_string(qntdVariaveisTemp), "char_array"});
     else // caso em que n tenha nenhum tipo atribuído - vamos inicializar "vazio" - ou em dinâmico
         temporarias.insert({"T" + to_string(qntdVariaveisTemp), "null"});
       
@@ -810,6 +830,7 @@ void insereFixasTabelaSimbolos(string nome, string tipo)
     TIPO_SIMBOLO temp;
     temp.nomeVariavel = nome;
     temp.tipoVariavel = pegaTipo(tipo);
+    if(debug) cout << "[DEBUG] Tipo processado em pegaTipo: '" << temp.tipoVariavel << "' para o tipo recebido: '" << tipo << "'\n";
     temp.label = geraNomeTemp(tipo);
 
     escopoAtual[nome] = temp;
@@ -869,6 +890,8 @@ string pegaTipo(string tipo)
         return "char";
     else if(tipo == "pp" || tipo == "bool")
         return "bool";
+     else if(tipo == "falada" || tipo == "string")
+        return "string";    
     else 
         return "null";      
 }

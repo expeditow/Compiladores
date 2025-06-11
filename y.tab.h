@@ -60,27 +60,28 @@ extern int yydebug;
     TK_FLOAT = 261,                /* TK_FLOAT  */
     TK_BOOLEAN = 262,              /* TK_BOOLEAN  */
     TK_CHAR = 263,                 /* TK_CHAR  */
-    TK_MAIOR_IGUAL = 264,          /* TK_MAIOR_IGUAL  */
-    TK_MENOR_IGUAL = 265,          /* TK_MENOR_IGUAL  */
-    TK_DIFERENTE = 266,            /* TK_DIFERENTE  */
-    TK_IGUAL = 267,                /* TK_IGUAL  */
-    TK_E_LOGICO = 268,             /* TK_E_LOGICO  */
-    TK_OU_LOGICO = 269,            /* TK_OU_LOGICO  */
-    TK_NEGACAO = 270,              /* TK_NEGACAO  */
-    TK_IF = 271,                   /* TK_IF  */
-    TK_ELSE = 272,                 /* TK_ELSE  */
-    TK_WHILE = 273,                /* TK_WHILE  */
-    TK_DO = 274,                   /* TK_DO  */
-    TK_FOR = 275,                  /* TK_FOR  */
-    TK_IN = 276,                   /* TK_IN  */
-    TK_SWITCH = 277,               /* TK_SWITCH  */
-    TK_CASE = 278,                 /* TK_CASE  */
-    TK_BREAK = 279,                /* TK_BREAK  */
-    TK_DEFAULT = 280,              /* TK_DEFAULT  */
-    TK_CONTINUE = 281,             /* TK_CONTINUE  */
-    TK_PRINT = 282,                /* TK_PRINT  */
-    TK_SCAN = 283,                 /* TK_SCAN  */
-    FIM_LINHA = 284                /* FIM_LINHA  */
+    TK_STRING = 264,               /* TK_STRING  */
+    TK_MAIOR_IGUAL = 265,          /* TK_MAIOR_IGUAL  */
+    TK_MENOR_IGUAL = 266,          /* TK_MENOR_IGUAL  */
+    TK_DIFERENTE = 267,            /* TK_DIFERENTE  */
+    TK_IGUAL = 268,                /* TK_IGUAL  */
+    TK_E_LOGICO = 269,             /* TK_E_LOGICO  */
+    TK_OU_LOGICO = 270,            /* TK_OU_LOGICO  */
+    TK_NEGACAO = 271,              /* TK_NEGACAO  */
+    TK_IF = 272,                   /* TK_IF  */
+    TK_ELSE = 273,                 /* TK_ELSE  */
+    TK_WHILE = 274,                /* TK_WHILE  */
+    TK_DO = 275,                   /* TK_DO  */
+    TK_FOR = 276,                  /* TK_FOR  */
+    TK_IN = 277,                   /* TK_IN  */
+    TK_SWITCH = 278,               /* TK_SWITCH  */
+    TK_CASE = 279,                 /* TK_CASE  */
+    TK_BREAK = 280,                /* TK_BREAK  */
+    TK_DEFAULT = 281,              /* TK_DEFAULT  */
+    TK_CONTINUE = 282,             /* TK_CONTINUE  */
+    TK_PRINT = 283,                /* TK_PRINT  */
+    TK_SCAN = 284,                 /* TK_SCAN  */
+    FIM_LINHA = 285                /* FIM_LINHA  */
   };
   typedef enum yytokentype yytoken_kind_t;
 #endif
@@ -95,27 +96,28 @@ extern int yydebug;
 #define TK_FLOAT 261
 #define TK_BOOLEAN 262
 #define TK_CHAR 263
-#define TK_MAIOR_IGUAL 264
-#define TK_MENOR_IGUAL 265
-#define TK_DIFERENTE 266
-#define TK_IGUAL 267
-#define TK_E_LOGICO 268
-#define TK_OU_LOGICO 269
-#define TK_NEGACAO 270
-#define TK_IF 271
-#define TK_ELSE 272
-#define TK_WHILE 273
-#define TK_DO 274
-#define TK_FOR 275
-#define TK_IN 276
-#define TK_SWITCH 277
-#define TK_CASE 278
-#define TK_BREAK 279
-#define TK_DEFAULT 280
-#define TK_CONTINUE 281
-#define TK_PRINT 282
-#define TK_SCAN 283
-#define FIM_LINHA 284
+#define TK_STRING 264
+#define TK_MAIOR_IGUAL 265
+#define TK_MENOR_IGUAL 266
+#define TK_DIFERENTE 267
+#define TK_IGUAL 268
+#define TK_E_LOGICO 269
+#define TK_OU_LOGICO 270
+#define TK_NEGACAO 271
+#define TK_IF 272
+#define TK_ELSE 273
+#define TK_WHILE 274
+#define TK_DO 275
+#define TK_FOR 276
+#define TK_IN 277
+#define TK_SWITCH 278
+#define TK_CASE 279
+#define TK_BREAK 280
+#define TK_DEFAULT 281
+#define TK_CONTINUE 282
+#define TK_PRINT 283
+#define TK_SCAN 284
+#define FIM_LINHA 285
 
 /* Value type.  */
 #if ! defined YYSTYPE && ! defined YYSTYPE_IS_DECLARED

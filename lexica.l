@@ -17,7 +17,7 @@ ID {LETRA}({LETRA}|{NUM})*
 
 {DELIM} 	{}
 
-"\n"        { yylinha++; return FIM_LINHA;}
+\n        { yylinha++; return FIM_LINHA;}
 
 [(){}[\];,]	{ return *yytext; }
 [+\-*/]		{ return *yytext; }
@@ -43,10 +43,12 @@ ID {LETRA}({LETRA}|{NUM})*
 "nmr"       { yylval.label = yytext; return TK_TIPO; }
 "ncv"       { yylval.label = yytext; return TK_TIPO; }
 "pp"        { yylval.label = yytext; return TK_TIPO; }
-"letra"     { yylval.label = yytext; return TK_TIPO; }     
+"letra"     { yylval.label = yytext; return TK_TIPO; }    
+"falada"    { yylval.label = yytext; return TK_TIPO; } 
 
 
 \'[^\\']\'  { yylval.traducao = yytext; return TK_CHAR; }
+\"[^\"]*\"  { yylval.traducao = yytext; return TK_STRING; }
 
 "se"        { return TK_IF;}
 "senao"     { return TK_ELSE; }

@@ -1,13 +1,5 @@
-nmr A
-A = 10
-fala(A)
-fala(20 + 5)
-ncv B
-B = 3.14
-fala(B)
-letra C
-C = 'X'
-fala(C)
-pp D
-D = reto
-fala(D)
+nmr x = 1
+nmr teste {
+falada st1
+st1 = "oi"}
+falada st1
