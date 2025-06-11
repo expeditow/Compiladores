@@ -1,5 +1,3 @@
+falada st1 = "oi"
 nmr x = 1
-nmr teste {
-falada st1
-st1 = "oi"}
-falada st1
+nmr y = x + st1

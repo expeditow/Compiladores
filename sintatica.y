@@ -315,12 +315,14 @@ CMD         : EXP FIM_LINHA  { $$.traducao = $1.traducao; }
             | TK_SCAN '(' TK_ID ')' FIM_LINHA
             {
 
-                TIPO_SIMBOLO varSimbolo;
+                   TIPO_SIMBOLO varSimbolo;
                 if (!verificaTabelaSimbolos($3.label)) {
                     yyerror("Variável '" + $3.label + "' não declarada para 'ouve' (scan).");
                 } else {
                     varSimbolo = pegaVariavelTabelaSimbolos($3.label);
                 }
+
+                string tempLer = insereTemporariasTabelaSimbolos("", varSimbolo.tipoVariavel);
 
                 string formato = "";
                 if (varSimbolo.tipoVariavel == "int") {
@@ -328,14 +330,17 @@ CMD         : EXP FIM_LINHA  { $$.traducao = $1.traducao; }
                 } else if (varSimbolo.tipoVariavel == "float") {
                     formato = "%f";
                 } else if (varSimbolo.tipoVariavel == "char") {
-                    formato = "%c";
-                } else if (varSimbolo.tipoVariavel == "bool") { // Boleanos são lidos como int (0 ou 1)
-                    formato = "%d";
+                    formato = " %c";
+                } else if (varSimbolo.tipoVariavel == "bool") {
+                    formato = "%d"; 
                 } else {
                     yyerror("Tipo inválido para 'ouve' (scan): " + varSimbolo.tipoVariavel);
                 }
 
-                $$.traducao = "\tscanf(\"" + formato + "\", &" + varSimbolo.label + ");\n";
+                string traducaoLeitura = "\tscanf(\"" + formato + "\", &" + tempLer + ");\n";
+                string traducaoAtr = "\t" + varSimbolo.label + " = " + tempLer + ";\n";
+
+                $$.traducao = traducaoLeitura + traducaoAtr;
             }
             ;
 
@@ -432,7 +437,7 @@ EXP         : EXP '+' TERMO
                     $$.traducao += "\t" + temporario + " = (float) " + $3.label + ";\n" + 
                     "\t" + $$.label + " = " + $1.label + " + " + temporario + ";\n"; 
                 }
-                else if($1.tipo == "bool" || $3.tipo == "bool")
+                else if($1.tipo == "bool" || $3.tipo == "bool" || $1.tipo == "string" || $3.tipo == "string")
                 {
                     string erro = "[ERRO] Operação '+' inválida entre tipos " + $1.tipo + " e " + $3.tipo;
                     yyerror(erro);
@@ -465,7 +470,7 @@ EXP         : EXP '+' TERMO
                     $$.traducao += "\t" + temporario + " = (float) " + $3.label + ";\n" + 
                     "\t" + $$.label + " = " + $1.label + " - " + temporario + ";\n"; 
                 }
-                else if($1.tipo == "bool" || $3.tipo == "bool")
+                else if($1.tipo == "bool" || $3.tipo == "bool"|| $1.tipo == "string" || $3.tipo == "string")
                 {
                     string erro = "[ERRO] Operação '-' inválida entre tipos " + $1.tipo + " e " + $3.tipo;
                     yyerror(erro);
