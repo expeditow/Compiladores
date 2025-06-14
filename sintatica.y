@@ -19,6 +19,16 @@ struct atributos
     string label;       // A variável temporária atribuída
     string traducao;    // A tradução em código intermediário
     string tipo;        // O tipo, p casos de operações que precisamos criar uma nova label
+
+    string traducao_condicao_case; // Código para avaliar a expressão do case (ex: T_val = 5;)
+    string label_condicao_case;    // Label do valor do case (ex: T_5). Usado na comparação.
+    string tipo_condicao_case;     // Tipo do valor do case (ex: "int"). Usado para verificação de tipo.
+    string traducao_corpo_case;    // Tradução do CMDS do corpo do case.
+    bool eh_default;               // Flag para indicar se o ITEM_CASE_DEFAULT é um 'default' (true) ou um 'case' (false)
+
+    // Campos que a regra LISTA_CASES_SEM_DEFAULT irá sintetizar
+    string traducao_testes_cases;  // Contém a sequência de IFs e GOTOs para testar cada case.
+    string traducao_corpos_cases;  
 };
 
 typedef struct
@@ -159,9 +169,11 @@ CMD         : EXP FIM_LINHA  { $$.traducao = $1.traducao; }
             | TK_IF '(' EXP ')' BLOCO
             {
                 string rotuloFimIf = novo_rotulo();
+                string temp_cond = insereTemporariasTabelaSimbolos("", "bool"); // Nova linha
                 $$.traducao = $3.traducao +
-                              "\tif (!" + $3.label + ") goto " + rotuloFimIf + ";\n" + 
-                              $5.traducao + rotuloFimIf + ":\n"; 
+              "\t" + temp_cond + " = " + $3.label + ";\n" + // Nova linha
+              "\tif (!" + temp_cond + ") goto " + rotuloFimIf + ";\n" + // Linha modificada
+              $5.traducao + rotuloFimIf + ":\n";
             }
             | TK_IF '(' EXP ')' BLOCO TK_ELSE BLOCO
             {
@@ -292,7 +304,7 @@ CMD         : EXP FIM_LINHA  { $$.traducao = $1.traducao; }
                 }
                 $$.traducao = "\tgoto " + pilhaRotulosProxIteracao.top() + ";\n";
             }
-            | TK_PRINT '(' EXP ')' FIM_LINHA
+            | TK_PRINT '(' EXP ')' QUEBRA_LINHA
             {
                 string formato = "";
                 if ($3.tipo == "int") {
@@ -311,7 +323,6 @@ CMD         : EXP FIM_LINHA  { $$.traducao = $1.traducao; }
             }
             | TK_SCAN '(' TK_ID ')' FIM_LINHA
             {
-
                 TIPO_SIMBOLO varSimbolo;
                 if (!verificaTabelaSimbolos($3.label)) {
                     yyerror("Variável '" + $3.label + "' não declarada para 'ouve' (scan).");
@@ -319,24 +330,33 @@ CMD         : EXP FIM_LINHA  { $$.traducao = $1.traducao; }
                     varSimbolo = pegaVariavelTabelaSimbolos($3.label);
                 }
 
+                string tempLer = insereTemporariasTabelaSimbolos("", varSimbolo.tipoVariavel);
+
                 string formato = "";
                 if (varSimbolo.tipoVariavel == "int") {
                     formato = "%d";
                 } else if (varSimbolo.tipoVariavel == "float") {
                     formato = "%f";
                 } else if (varSimbolo.tipoVariavel == "char") {
-                    formato = "%c";
-                } else if (varSimbolo.tipoVariavel == "bool") { // Boleanos são lidos como int (0 ou 1)
-                    formato = "%d";
+                    formato = " %c";
+                } else if (varSimbolo.tipoVariavel == "bool") {
+                    formato = "%d"; 
                 } else {
                     yyerror("Tipo inválido para 'ouve' (scan): " + varSimbolo.tipoVariavel);
                 }
 
-                $$.traducao = "\tscanf(\"" + formato + "\", &" + varSimbolo.label + ");\n";
+                string traducaoLeitura = "\tscanf(\"" + formato + "\", &" + tempLer + ");\n";
+                string traducaoAtr = "\t" + varSimbolo.label + " = " + tempLer + ";\n";
+
+                $$.traducao = traducaoLeitura + traducaoAtr;
             }
             ;
 
 
+QUEBRA_LINHA : FIM_LINHA QUEBRA_LINHA
+            | 
+            ;
+            
 FOR_INICIA  : DECL { $$.traducao = $1.traducao; }
             | ATR { $$.traducao = $1.traducao; }
             | { $$.traducao = ""; }

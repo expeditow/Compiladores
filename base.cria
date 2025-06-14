@@ -1,13 +1,4 @@
-nmr A
-A = 10
-fala(A)
-fala(20 + 5)
-ncv B
-B = 3.14
-fala(B)
-letra C
-C = 'X'
-fala(C)
-pp D
-D = reto
-fala(D)
+nmr X = 5
+se(X < 3) {
+  fala(X)
+}

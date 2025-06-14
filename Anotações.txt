@@ -1,2 +1,82 @@
-1 - Começar fazendo o bloco com nome
-2 - Começar colocar tabela de símbolos
+1 - Testes de entrada e saída
+
+nmr idade
+ouve(idade)
+fala(idade)
+
+ncv altura
+ouve(altura)
+fala(altura)
+
+letra nome
+ouve(nome)
+fala(nome)
+
+2 - IF
+
+nmr idade = 18
+se (idade >= 18){
+  fala(1)
+}
+fala(0)
+
+3 - IF/ELSE
+
+nmr pontuacao = 75
+se (pontuacao > 80){
+  fala(2)
+} senao {
+  fala(3)
+}
+fala(4)
+
+4 - WHILE
+
+nmr contador = 0
+ainda (contador < 3){
+  fala(100 + contador)
+  contador = contador + 1
+}
+fala(999)
+
+5 - DO/WHILE
+
+nmr tentativas = 0;
+mantem {
+  fala(500 + tentativas)
+  tentativas = tentativas + 1
+} ainda (tentativas < 2)
+fala(888)
+
+6 - FOR
+
+corre (nmr i = 0; i < 4; i = i + 1){
+  fala(1000 + i)
+}
+fala(777)
+
+7 - BREAK 
+
+nmr val = 0
+ainda (val < 10){
+  fala(val)
+  val = val + 1
+  se (val == 4){
+    fala(99)
+    pare
+  }
+}
+fala(0)
+
+8 - CONTINUE
+
+nmr num = 0
+ainda (num < 5){
+  num = num + 1
+  se (num == 2){
+    fala(77)
+    continua
+  }
+  fala(num * 10)
+}
+fala(0)
