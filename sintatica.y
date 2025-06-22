@@ -52,7 +52,7 @@ string pegaTipo(string tipo);
 string infereTipo(string tipo1, string tipo2);
 string pegaBooleano(string valor);
 
-bool debug = true;
+bool debug = false;
 #define true 1
 #define false 0
 
@@ -161,22 +161,48 @@ CMD         : EXP FIM_LINHA  { $$.traducao = $1.traducao; }
             | FIM_LINHA      { $$.traducao = "";          }
             | TK_IF '(' EXP ')' BLOCO
             {
+                // Rótulo para o final do 'if'
                 string rotuloFimIf = novo_rotulo();
-                $$.traducao = $3.traducao +
-                              "\tif (!" + $3.label + ") goto " + rotuloFimIf + ";\n" + 
-                              $5.traducao + rotuloFimIf + ":\n"; 
+
+                // 1. Variável para receber a CÓPIA do resultado da condição (o seu T6)
+                string temp_copia = insereTemporariasTabelaSimbolos("", "bool");
+
+                // 2. Variável para receber a NEGAÇÃO da cópia (o seu T7)
+                string temp_negada = insereTemporariasTabelaSimbolos("", "bool");
+
+                // 3. Monta a tradução para gerar o código EXATO que você quer:
+                $$.traducao = $3.traducao +      // Gera: T4 = T2 >= T3;  ($3.label é T4)
+                            
+                            // Gera a cópia: T6 = T4
+                            "\t" + temp_copia + " = " + $3.label + ";\n" +
+                            
+                            // Gera a negação explícita: T7 = !T6
+                            "\t" + temp_negada + " = !" + temp_copia + ";\n" +
+                            
+                            // Gera o desvio condicional: if (T7) goto L0;
+                            "\tif (" + temp_negada + ") goto " + rotuloFimIf + ";\n" +
+                            
+                            $5.traducao +          // Corpo do 'if'
+                            rotuloFimIf + ":\n";     // Rótulo de saída
             }
             | TK_IF '(' EXP ')' BLOCO TK_ELSE BLOCO
             {
                 string rotuloElse = novo_rotulo();
                 string rotuloFimIfElse = novo_rotulo();
-                $$.traducao = $3.traducao + // Tradução da expressão (condição)
-                              "\tif (!" + $3.label + ") goto " + rotuloElse + ";\n" + // Se cond. falsa, salta para o 'else'
-                              $5.traducao + // Tradução do BLOCO do 'if'
-                              "\tgoto " + rotuloFimIfElse + ";\n" + // Salta para o fim de tudo após o 'if'
-                              rotuloElse + ":\n" + // Rótulo para o início do bloco 'else'
-                              $7.traducao + // Tradução do BLOCO do 'else'
-                              rotuloFimIfElse + ":\n"; // Rótulo para o fim de toda a estrutura
+
+                string temp_copia = insereTemporariasTabelaSimbolos("", "bool");
+                string temp_negada = insereTemporariasTabelaSimbolos("", "bool");
+
+                $$.traducao = $3.traducao + 
+                            
+                            "\t" + temp_copia + " = " + $3.label + ";\n" +
+                            "\t" + temp_negada + " = !" + temp_copia + ";\n" +
+                            "\tif (" + temp_negada + ") goto " + rotuloElse + ";\n" +
+                            $5.traducao +
+                            "\tgoto " + rotuloFimIfElse + ";\n" +
+                            rotuloElse + ":\n" + 
+                            $7.traducao +
+                            rotuloFimIfElse + ":\n";
             }
             | TK_WHILE '(' EXP ')'
             /* preciso disso em tempo de execução, senão ele desce na árvoree n tem nada na pilha*/
@@ -306,7 +332,7 @@ CMD         : EXP FIM_LINHA  { $$.traducao = $1.traducao; }
                     formato = "%c";
                 } else if ($3.tipo == "bool") { 
                     formato = "%d";
-                } else {
+                } else { // adicionar o 
                     yyerror("Tipo inválido para 'fala' (print): " + $3.tipo);
                 }
 

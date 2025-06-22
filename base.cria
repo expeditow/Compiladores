@@ -1,10 +1,5 @@
-nmr x =1
-letra y = 'i'
-nmr teste{
-    nmr x
-    x = 2
-    falada st1 = "oi"
-    corre(nmr i = 0;i<10;i = i + i){
-        pp bool
-    }
-}
+nmr pontuacao = 75
+se (pontuacao > 80){
+  fala(2)
+} 
+fala(pontuacao)
