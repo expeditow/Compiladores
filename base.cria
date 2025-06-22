@@ -1,5 +1,3 @@
-nmr pontuacao = 75
-se (pontuacao > 80){
-  fala(2)
-} 
-fala(pontuacao)
+falada mensagem
+mensagem = ""
+

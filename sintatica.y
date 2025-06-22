@@ -51,6 +51,7 @@ string geraNomeTemporarias(string tipo);
 string pegaTipo(string tipo);
 string infereTipo(string tipo1, string tipo2);
 string pegaBooleano(string valor);
+int tamanho_string(string texto);
 
 bool debug = false;
 #define true 1
@@ -778,6 +779,8 @@ FATOR       : '(' EXP ')'
                 $$.tipo = "char"; 
             }
             | TK_STRING{
+               cout << "label = " << $$.traducao << endl;
+               int tamanho = tamanho_string($$.traducao);
                $$.label = insereTemporariasTabelaSimbolos("", "falada");
                $$.traducao = "\tstrcpy(" + $$.label + ", " + $1.traducao + ");\n";
                $$.tipo = "string"; 
@@ -790,6 +793,23 @@ FATOR       : '(' EXP ')'
 
 int yyparse();
 
+int tamanho_string(string texto){ 
+    // pega as aspas da string
+    // vou deixar -2 na saída p tirar as aspas
+    // tem que colocar +1 por causa do \0 -> -2 + 1 = -1
+
+    int tamanhoString = 0;
+    int i = 0;
+    while(texto[i] != '\0'){ // se quiser testar como funciona isso aq só tirar o comentário do cout
+        //cout << texto[i] << " ";
+        tamanhoString++; 
+        i++;
+    }
+    //cout << endl;
+
+    //cout << tamanhoString-1<< endl;
+    return tamanhoString-1;
+}
 string novo_rotulo() {
     return "L" + to_string(contador_rotulos++);
 }
