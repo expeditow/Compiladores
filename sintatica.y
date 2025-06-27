@@ -27,6 +27,10 @@ typedef struct
     string tipoVariavel;  // int, float, double
     string label; // tipo registrador
 
+    bool isArray = false; // Indica se é uma matriz
+    int arraySize = 0;         // tamanho primeira dimensão
+    int arraySize2 = 0;        // tamanho segunda dimensão (nova)
+
 } TIPO_SIMBOLO;
 
 int yylex(void);
@@ -42,7 +46,7 @@ void printTabelaSimbolos();
 void entraEscopo();
 void saiEscopo();
 
-void insereFixasTabelaSimbolos(string nome, string tipo);
+void insereFixasTabelaSimbolos(string nome, string tipo,bool ehArray = false, int tamanhoArray = 0,int tamanhoArray2 = 0);
 string insereTemporariasTabelaSimbolos(string nome, string tipo);
 
 string novo_rotulo();
@@ -73,24 +77,65 @@ extern int yylinha;
 
 %%
 
-    START       :  { entraEscopo(); } CODIGO
-                {
-                    if(debug) cout << "[DEBUG] Árvore completa gerada. Tradução:\n";
+    START
+    : { entraEscopo(); } CODIGO
+    {
+        if(debug) cout << "[DEBUG] Árvore completa gerada. Tradução:\n";
 
-                    string defines = "\n\t#define true 1\n\t#define false 0\n\n\n";
-                    string declaracoes = "";
-                    for(auto i: temporarias){
-                         if(i.second == "string" || i.second == "char_array")
-                          declaracoes += "\tchar " + i.first + "[100];\n"; // tamanho fixo 100, pode melhorar
-                        else
-                          declaracoes += "\t" + i.second + " " + i.first + ";\n";
+        string defines = "\n\t#define true 1\n\t#define false 0\n\n\n";
+        string declaracoes = "";
+
+        for (auto i : temporarias) {
+            string label = i.first;     // Ex: T3
+            string tipo = i.second;     // Ex: int
+
+            bool declarada = false;
+
+            if (!pilhaTabelasSimbolos.empty()) {
+                for (const auto& par : pilhaTabelasSimbolos.back()) {
+                    const TIPO_SIMBOLO& simbolo = par.second;
+
+                    if (simbolo.label == label) {
+                        // Encontrou variável fixa associada a essa temporária
+                        if (simbolo.isArray) {
+                            if (simbolo.arraySize2 > 0) {
+                                // Matriz 2D
+                                declaracoes += "\t" + simbolo.tipoVariavel + " " + simbolo.label +
+                                               "[" + to_string(simbolo.arraySize) + "]"
+                                               "[" + to_string(simbolo.arraySize2) + "];\n";
+                            } else {
+                                // Vetor 1D
+                                declaracoes += "\t" + simbolo.tipoVariavel + " " + simbolo.label +
+                                               "[" + to_string(simbolo.arraySize) + "];\n";
+                            }
+                        } else {
+                            // Variável simples
+                            if (simbolo.tipoVariavel == "string" || simbolo.tipoVariavel == "char_array")
+                                declaracoes += "\tchar " + simbolo.label + "[100];\n";
+                            else
+                                declaracoes += "\t" + simbolo.tipoVariavel + " " + simbolo.label + ";\n";
+                        }
+
+                        declarada = true;
+                        break;
                     }
-                    cout << defines << declaracoes << endl << $2.traducao << endl;
-                    saiEscopo();
                 }
-                |
-                ;
+            }
 
+            if (!declarada) {
+                // Temporária sem variável fixa associada
+                if (tipo == "string" || tipo == "char_array")
+                    declaracoes += "\tchar " + label + "[100];\n";
+                else
+                    declaracoes += "\t" + tipo + " " + label + ";\n";
+            }
+        }
+
+        cout << defines << declaracoes << endl << $2.traducao << endl;
+        saiEscopo();
+    }
+    |
+    ;
 CODIGO      :  ITEM CODIGO
             {
                 $$.traducao = $1.traducao + $2.traducao;
@@ -411,6 +456,31 @@ DECL        : TK_TIPO TK_ID
                     $$.traducao = $4.traducao + "\t" + varSimbolo.label + " = " + $4.label + ";\n";
                 }
             }
+            | TK_TIPO TK_ID '[' TK_INT ']' '[' TK_INT ']'
+    {
+        string tipo = pegaTipo($1.label);
+        int tamanho1 = stoi($4.label);
+        int tamanho2 = stoi($7.label);
+
+        if (tipo == "string" || $1.label == "falada") {
+            insereFixasTabelaSimbolos($2.label, "string", true, tamanho1, tamanho2);
+        } else {
+            insereFixasTabelaSimbolos($2.label, $1.label, true, tamanho1, tamanho2);
+        }
+        $$.traducao = "";
+    }
+    | TK_TIPO TK_ID '[' TK_INT ']'           // vetor 1D
+    {
+        string tipo = pegaTipo($1.label);
+        int tamanho = stoi($4.label);
+
+        if (tipo == "string" || $1.label == "falada") {
+            insereFixasTabelaSimbolos($2.label, "string", true, tamanho);
+        } else {
+            insereFixasTabelaSimbolos($2.label, $1.label, true, tamanho);
+        }
+        $$.traducao = "";
+    }
             ;
 
 ATR         : TK_ID '=' EXP
@@ -858,7 +928,7 @@ string insereTemporariasTabelaSimbolos(string nome, string tipo)
     return temp.label;
 }
 
-void insereFixasTabelaSimbolos(string nome, string tipo)
+void insereFixasTabelaSimbolos(string nome, string tipo,bool ehArray, int tamanhoArray, int tamanhoArray2)
 {   
     if (pilhaTabelasSimbolos.empty())
     {
@@ -883,6 +953,10 @@ void insereFixasTabelaSimbolos(string nome, string tipo)
     temp.tipoVariavel = pegaTipo(tipo);
     if(debug) cout << "[DEBUG] Tipo processado em pegaTipo: '" << temp.tipoVariavel << "' para o tipo recebido: '" << tipo << "'\n";
     temp.label = geraNomeTemp(tipo);
+
+    temp.isArray = ehArray;
+    temp.arraySize = tamanhoArray;
+    temp.arraySize2 = tamanhoArray2;  // novo!
 
     escopoAtual[nome] = temp;
 }
