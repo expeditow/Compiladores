@@ -1,2 +1,4 @@
-nmr teste[10]
-
+nmr vet[5]
+vet[3] = 3
+nmr x
+x = vet[3]

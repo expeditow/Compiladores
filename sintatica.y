@@ -31,6 +31,10 @@ typedef struct
     int arraySize = 0;         // tamanho primeira dimensão
     int arraySize2 = 0;        // tamanho segunda dimensão (nova)
 
+ int getTamanhoTotal() const {
+        return arraySize * (arraySize2 > 0 ? arraySize2 : 1);
+    }
+
 } TIPO_SIMBOLO;
 
 int yylex(void);
@@ -51,7 +55,7 @@ string insereTemporariasTabelaSimbolos(string nome, string tipo);
 
 string novo_rotulo();
 
-string geraNomeTemporarias(string tipo);
+string geraNomeTemp(string tipo);
 string pegaTipo(string tipo);
 string infereTipo(string tipo1, string tipo2);
 string pegaBooleano(string valor);
@@ -98,16 +102,13 @@ extern int yylinha;
                     if (simbolo.label == label) {
                         // Encontrou variável fixa associada a essa temporária
                         if (simbolo.isArray) {
-                            if (simbolo.arraySize2 > 0) {
-                                // Matriz 2D
-                                declaracoes += "\t" + simbolo.tipoVariavel + " " + simbolo.label +
-                                               "[" + to_string(simbolo.arraySize) + "]"
-                                               "[" + to_string(simbolo.arraySize2) + "];\n";
-                            } else {
-                                // Vetor 1D
-                                declaracoes += "\t" + simbolo.tipoVariavel + " " + simbolo.label +
-                                               "[" + to_string(simbolo.arraySize) + "];\n";
-                            }
+                               int tamanho = simbolo.getTamanhoTotal();
+
+    if (simbolo.tipoVariavel == "string" || simbolo.tipoVariavel == "char_array") {
+        declaracoes += "\tchar " + simbolo.label + "[" + to_string(tamanho) + "];\n";
+    } else {
+        declaracoes += "\t" + simbolo.tipoVariavel + " " + simbolo.label + "[" + to_string(tamanho) + "];\n";
+    }
                         } else {
                             // Variável simples
                             if (simbolo.tipoVariavel == "string" || simbolo.tipoVariavel == "char_array")
@@ -507,7 +508,139 @@ ATR         : TK_ID '=' EXP
                 }
 
             }
-        
+            |
+            TK_ID '[' EXP ']' '=' EXP
+    {
+        // 1) Verifica se variável existe
+        if (!verificaTabelaSimbolos($1.label))
+            yyerror("Variável '" + $1.label + "' não declarada para atribuição em índice.");
+
+        // 2) Recupera símbolo
+        TIPO_SIMBOLO temp = pegaVariavelTabelaSimbolos($1.label);
+
+        // 3) Verifica se é realmente um vetor
+        if (!temp.isArray)
+            yyerror("Variável '" + $1.label + "' não é um vetor.");
+
+        // 4) O índice deve ser inteiro
+        if ($3.tipo != "int")
+            yyerror("Índice de vetor deve ser inteiro: tipo recebido '" + $3.tipo + "'.");
+
+        // 5) Verifica compatibilidade de tipos no RHS
+        if (temp.tipoVariavel != pegaTipo($6.tipo))
+            yyerror("Tipo incompatível ao atribuir em vetor '" + $1.label + "'.");
+
+        // 6) Monta o acesso e a tradução
+        $$.label = temp.label;                     // o próprio vetor
+        $$.traducao = $3.traducao    // tradução da expressão de índice
+                    + $6.traducao    // tradução do RHS
+                    + "\t" + temp.label 
+                    + "[" + $3.label + "] = " + $6.label + ";\n";
+    }
+    |TK_ID '[' EXP ']' '[' EXP ']' '=' EXP
+    {
+    if (!verificaTabelaSimbolos($1.label))
+        yyerror("Matriz não declarada: " + $1.label);
+
+    TIPO_SIMBOLO mat = pegaVariavelTabelaSimbolos($1.label);
+
+    if (!mat.isArray || mat.arraySize2 == 0)
+        yyerror("'" + $1.label + "' não é matriz 2D.");
+
+    if ($3.tipo != "int" || $6.tipo != "int")
+        yyerror("Índices de matriz devem ser inteiros.");
+
+    if (mat.tipoVariavel != pegaTipo($9.tipo))
+        yyerror("Tipo incompatível ao atribuir em matriz '" + $1.label + "'.");
+
+    // Cria temporárias para calcular índice linearizado
+    string tempMult = insereTemporariasTabelaSimbolos("temp", "int");
+    string tempIdx  = insereTemporariasTabelaSimbolos("temp", "int");
+
+    $$.traducao  = $3.traducao               // código de i
+                 + $6.traducao               // código de j
+                 + "\t" + tempMult + " = " + $3.label + " * " + to_string(mat.arraySize2) + ";\n"
+                 + "\t" + tempIdx  + " = " + tempMult + " + " + $6.label + ";\n"
+                 + $9.traducao               // código do valor
+                 + "\t" + mat.label + "[" + tempIdx + "] = " + $9.label + ";\n";
+
+    }
+    | TK_ID '=' TK_ID '[' EXP ']' '[' EXP ']'
+        {
+        // 1) Verifica se a matriz existe
+        if (!verificaTabelaSimbolos($3.label))
+            yyerror("Matriz não declarada: " + $3.label);
+
+        // 2) Recupera o símbolo
+        TIPO_SIMBOLO mat = pegaVariavelTabelaSimbolos($3.label);
+
+        // 3) Verifica se é uma matriz 2D
+        if (!mat.isArray || mat.arraySize2 == 0)
+            yyerror("'" + $3.label + "' não é matriz 2D.");
+
+        // 4) Verifica se o lado esquerdo existe e é variável atribuível
+        if (!verificaTabelaSimbolos($1.label))
+            yyerror("Variável '" + $1.label + "' não declarada.");
+
+        TIPO_SIMBOLO destino = pegaVariavelTabelaSimbolos($1.label);
+
+        // 5) Tipos compatíveis?
+        if (destino.tipoVariavel != mat.tipoVariavel)
+            yyerror("Tipos incompatíveis entre '" + $1.label + "' e matriz '" + $3.label + "'.");
+
+        // 6) Índices devem ser inteiros
+        if ($5.tipo != "int" || $8.tipo != "int")
+            yyerror("Índices da matriz devem ser inteiros.");
+
+        // 7) Gerar temporários
+        string tempMult = insereTemporariasTabelaSimbolos("temp", "int");
+        string tempIdx  = insereTemporariasTabelaSimbolos("temp", "int");
+
+        // 8) Tradução
+        $$.traducao  = $5.traducao              // código do primeiro índice
+                        + $8.traducao              // código do segundo índice
+                        + "\t" + tempMult + " = " + $5.label + " * " + to_string(mat.arraySize2) + ";\n"
+                        + "\t" + tempIdx  + " = " + tempMult + " + " + $8.label + ";\n"
+                        + "\t" + destino.label + " = " + mat.label + "[" + tempIdx + "];\n";
+
+        $$.label = $1.label;
+        $$.tipo  = destino.tipoVariavel;
+        }
+        | TK_ID '=' TK_ID '[' EXP ']'
+{
+    // 1) Verifica se vetor existe
+    if (!verificaTabelaSimbolos($3.label))
+        yyerror("Vetor não declarado: " + $3.label);
+
+    // 2) Recupera símbolo do vetor
+    TIPO_SIMBOLO vet = pegaVariavelTabelaSimbolos($3.label);
+
+    // 3) Verifica se é vetor 1D (array com arraySize e arraySize2 == 0)
+    if (!vet.isArray || vet.arraySize2 != 0)
+        yyerror("'" + $3.label + "' não é vetor 1D.");
+
+    // 4) Verifica se variável destino existe
+    if (!verificaTabelaSimbolos($1.label))
+        yyerror("Variável '" + $1.label + "' não declarada.");
+
+    TIPO_SIMBOLO destino = pegaVariavelTabelaSimbolos($1.label);
+
+    // 5) Verifica compatibilidade de tipos
+    if (destino.tipoVariavel != vet.tipoVariavel)
+        yyerror("Tipos incompatíveis entre '" + $1.label + "' e vetor '" + $3.label + "'.");
+
+    // 6) Índice deve ser inteiro
+    if ($5.tipo != "int")
+        yyerror("Índice do vetor deve ser inteiro.");
+
+    // 7) Cria tradução
+    $$.traducao  = $5.traducao                   // código do índice
+                 + "\t" + $1.label + " = " + vet.label + "[" + $5.label + "];\n";
+
+    $$.label = destino.label;
+    $$.tipo  = destino.tipoVariavel;
+}
+      ;  
 
 EXP         : EXP '+' TERMO 
             {   
