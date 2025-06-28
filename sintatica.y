@@ -112,7 +112,7 @@ extern int yylinha;
                         } else {
                             // Variável simples
                             if (simbolo.tipoVariavel == "string" || simbolo.tipoVariavel == "char_array")
-                                declaracoes += "\tchar " + simbolo.label + "[100];\n";
+                                declaracoes += "\tchar " + simbolo.label + "*;\n";
                             else
                                 declaracoes += "\t" + simbolo.tipoVariavel + " " + simbolo.label + ";\n";
                         }
@@ -126,7 +126,7 @@ extern int yylinha;
             if (!declarada) {
                 // Temporária sem variável fixa associada
                 if (tipo == "string" || tipo == "char_array")
-                    declaracoes += "\tchar " + label + "[100];\n";
+                    declaracoes += "\tchar " + label + "*;\n";
                 else
                     declaracoes += "\t" + tipo + " " + label + ";\n";
             }
@@ -928,7 +928,8 @@ FATOR       : '(' EXP ')'
                 
                 if(debug) cout << "[DEBUG] Acessando variável: " << $1.label 
                 << " (Tipo: " << temp.tipoVariavel << ")\n";
-
+                  if (temp.isArray)  
+                    yyerror("Acesso inválido: vetor/matriz '" + $1.label + "' usado sem índice.");
                 $$.label = temp.label;
                 $$.tipo = temp.tipoVariavel;
                 $$.traducao = "";
@@ -987,6 +988,50 @@ FATOR       : '(' EXP ')'
                $$.label = insereTemporariasTabelaSimbolos("", "falada");
                $$.traducao = "\tstrcpy(" + $$.label + ", " + $1.traducao + ");\n";
                $$.tipo = "string"; 
+            }
+            | TK_ID '[' EXP ']' {
+            if (!verificaTabelaSimbolos($1.label))
+                yyerror("Vetor '" + $1.label + "' não declarado.");
+
+            TIPO_SIMBOLO vet = pegaVariavelTabelaSimbolos($1.label);
+
+            if (!vet.isArray || vet.arraySize2 != 0)
+                yyerror("'" + $1.label + "' não é vetor 1D.");
+
+            if ($3.tipo != "int")
+                yyerror("Índice do vetor deve ser inteiro.");
+
+            string temp = insereTemporariasTabelaSimbolos("", vet.tipoVariavel);
+
+            $$.traducao = $3.traducao +
+                        "\t" + temp + " = " + vet.label + "[" + $3.label + "];\n";
+
+            $$.label = temp;
+            $$.tipo = vet.tipoVariavel;
+            }
+            | TK_ID '[' EXP ']' '[' EXP ']' {
+            if (!verificaTabelaSimbolos($1.label))
+                yyerror("Matriz '" + $1.label + "' não declarada.");
+
+            TIPO_SIMBOLO mat = pegaVariavelTabelaSimbolos($1.label);
+
+            if (!mat.isArray || mat.arraySize2 == 0)
+                yyerror("'" + $1.label + "' não é matriz 2D.");
+
+            if ($3.tipo != "int" || $6.tipo != "int")
+                yyerror("Índices da matriz devem ser inteiros.");
+
+            string tempMult = insereTemporariasTabelaSimbolos("", "int");
+            string tempIdx  = insereTemporariasTabelaSimbolos("", "int");
+            string tempRes  = insereTemporariasTabelaSimbolos("", mat.tipoVariavel);
+
+            $$.traducao = $3.traducao + $6.traducao +
+                        "\t" + tempMult + " = " + $3.label + " * " + to_string(mat.arraySize2) + ";\n" +
+                        "\t" + tempIdx  + " = " + tempMult + " + " + $6.label + ";\n" +
+                        "\t" + tempRes  + " = " + mat.label + "[" + tempIdx + "];\n";
+
+            $$.label = tempRes;
+            $$.tipo = mat.tipoVariavel;
             }
             ;
 

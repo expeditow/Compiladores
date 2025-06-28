@@ -1,4 +1,1 @@
-nmr vet[5]
-vet[3] = 3
-nmr x
-x = vet[3]
+falada teste = "oi"
