@@ -337,29 +337,18 @@ CMD         : EXP FIM_LINHA  { $$.traducao = $1.traducao; }
             | TK_PRINT '(' EXP ')' FIM_LINHA
             {
                 if ($3.tipo == "string_literal") {
-                    // Cria uma temporária para o ponteiro da string
                     string temp_print_str = insereTemporariasTabelaSimbolos("", "string");
-                    
-                    // Cria uma temporária para o tamanho (int)
-                    string temp_size_var = insereTemporariasTabelaSimbolos("", "int");
-                    
                     int tamanho = tamanho_string($3.label);
 
                     stringstream ss;
-                    // 1. Atribui o tamanho à variável temporária de tamanho
-                    ss << "\t" << temp_size_var << " = " << tamanho << ";\n";
-                    
-                    // 2. Usa a variável de tamanho no malloc
-                    ss << "\t" << temp_print_str << " = (char*) malloc(" << temp_size_var << ");\n";
-                    
+                    ss << "\t" << temp_print_str << " = (char*) malloc(" << tamanho << ");\n";
                     ss << "\tstrcpy(" << temp_print_str << ", " << $3.label << ");\n";
-                    ss << "\tprintf(\"%s\\n\", " << temp_print_str << ");\n";
+                    ss << "\tprintf(\"%s\\n\", " << temp_print_str << ");\n"; // LINHA CORRIGIDA com \n
                     ss << "\tfree(" << temp_print_str << ");\n";
 
                     $$.traducao = ss.str();
 
                 } else {
-                    // Lógica para printar variáveis (permanece a mesma)
                     string formato = "";
                     string tipoVar = pegaTipo($3.tipo);
                     
