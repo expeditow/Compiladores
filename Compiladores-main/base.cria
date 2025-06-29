@@ -1,0 +1,5 @@
+falada nome2 = "ola "
+falada nome1 = "tudo bem?"
+falada resultado = nome2 + nome1
+fala(resultado)
+
