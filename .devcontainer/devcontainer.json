@@ -1,0 +1,38 @@
+// .devcontainer/devcontainer.json
+{
+    // Nome que aparecerá no canto inferior esquerdo do VS Code
+    "name": "Meu Compilador Gírias RJ",
+    
+    // Configurações para a construção da imagem Docker
+    "build": {
+        "dockerfile": "Dockerfile", // Aponta para o Dockerfile na mesma pasta
+        "context": "." // Indica que o contexto de build é a pasta raiz do seu projeto local
+                       // (onde o .devcontainer está, e onde seus arquivos de código ficarão)
+    },
+    
+    // Define a pasta onde seus arquivos do projeto local serão montados dentro do container.
+    // Esta deve ser a mesma pasta que o WORKDIR no Dockerfile.
+    "workspaceFolder": "/workspaces/compilador", 
+
+    // Opcional: Comando que será executado uma vez, logo após o container ser criado 
+    // e o VS Code se conectar. 
+    // Útil para compilar o projeto automaticamente. Você pode remover esta linha
+    // se ainda não tem um Makefile configurado ou prefere compilar manualmente.
+    // "postCreateCommand": "make clean && make", 
+
+    // Extensões do VS Code que serão instaladas *dentro do container*
+    // para garantir um ambiente de desenvolvimento consistente.
+    "customizations": {
+        "vscode": {
+            "extensions": [
+                "ms-vscode.cpptools",             // Ferramentas C/C++ da Microsoft (IntelliSense, Debugging)
+                "ms-vscode.cpptools-extension-pack", // Pacote com extensões úteis para C/C++
+                "redhat.vscode-yaml"              // Útil para editar Dockerfiles e outros arquivos YAML
+            ]
+        }
+    },
+    
+    // Define o usuário com o qual o VS Code se conectará ao container.
+    // 'root' é comum para imagens base como Debian slim.
+    "remoteUser": "root" 
+}
