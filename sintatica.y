@@ -171,6 +171,8 @@ START
             } else {
                 if (simbolo.tipoVariavel == "string")
                     declaracoes += "\tchar* " + simbolo.label + " = NULL;\n";
+                else if(simbolo.tipoVariavel == "bool")
+                    declaracoes += "\tint " + simbolo.label + ";\n";
                 else
                     declaracoes += "\t" + simbolo.tipoVariavel + " " + simbolo.label + ";\n";
             }
@@ -1044,6 +1046,7 @@ FATOR       : TK_ID '(' LISTA_ARGS ')'
             }
             | TK_FLOAT
             {   
+                cout << "testnado";
                 $$.label = insereTemporariasTabelaSimbolos("", "float");
                 $$.traducao = "\t" + $$.label + " = " + $1.label + ";\n"; 
                 $$.tipo = "float"; 

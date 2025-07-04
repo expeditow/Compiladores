@@ -779,16 +779,16 @@ static const yytype_int8 yytranslate[] =
 /* YYRLINE[YYN] -- Source line where rule number YYN was defined.  */
 static const yytype_int16 yyrline[] =
 {
-       0,   115,   115,   115,   188,   192,   194,   197,   201,   201,
-     201,   237,   239,   242,   246,   298,   298,   306,   312,   317,
-     318,   319,   320,   321,   322,   323,   324,   337,   354,   354,
-     375,   375,   397,   397,   422,   429,   437,   469,   494,   498,
-     505,   506,   507,   509,   510,   511,   515,   521,   554,   562,
-     571,   607,   626,   643,   660,   677,   687,   702,   719,   733,
-     783,   803,   810,   817,   824,   831,   838,   845,   852,   859,
-     863,   883,   903,   907,   922,   931,   949,   967,   985,  1003,
-    1005,  1011,  1031,  1039,  1045,  1051,  1059,  1066,  1075,  1085,
-    1103,  1108,  1111,  1118,  1145
+       0,   115,   115,   115,   190,   194,   196,   199,   203,   203,
+     203,   239,   241,   244,   248,   300,   300,   308,   314,   319,
+     320,   321,   322,   323,   324,   325,   326,   339,   356,   356,
+     377,   377,   399,   399,   424,   431,   439,   471,   496,   500,
+     507,   508,   509,   511,   512,   513,   517,   523,   556,   564,
+     573,   609,   628,   645,   662,   679,   689,   704,   721,   735,
+     785,   805,   812,   819,   826,   833,   840,   847,   854,   861,
+     865,   885,   905,   909,   924,   933,   951,   969,   987,  1005,
+    1007,  1013,  1033,  1041,  1047,  1054,  1062,  1069,  1078,  1088,
+    1106,  1111,  1114,  1121,  1148
 };
 #endif
 
@@ -1596,6 +1596,8 @@ yyreduce:
             } else {
                 if (simbolo.tipoVariavel == "string")
                     declaracoes += "\tchar* " + simbolo.label + " = NULL;\n";
+                else if(simbolo.tipoVariavel == "bool")
+                    declaracoes += "\tint " + simbolo.label + ";\n";
                 else
                     declaracoes += "\t" + simbolo.tipoVariavel + " " + simbolo.label + ";\n";
             }
@@ -1611,41 +1613,41 @@ yyreduce:
 
         saiEscopo();
     }
-#line 1615 "y.tab.c"
+#line 1617 "y.tab.c"
     break;
 
   case 5: /* LISTA_FUNCOES: LISTA_FUNCOES FUNCAO  */
-#line 193 "sintatica.y"
+#line 195 "sintatica.y"
         { yyval.traducao = yyvsp[-1].traducao + "\n" + yyvsp[0].traducao; }
-#line 1621 "y.tab.c"
+#line 1623 "y.tab.c"
     break;
 
   case 6: /* LISTA_FUNCOES: LISTA_FUNCOES FIM_LINHA  */
-#line 195 "sintatica.y"
+#line 197 "sintatica.y"
         { yyval = yyvsp[-1]; }
-#line 1627 "y.tab.c"
+#line 1629 "y.tab.c"
     break;
 
   case 7: /* LISTA_FUNCOES: %empty  */
-#line 197 "sintatica.y"
+#line 199 "sintatica.y"
         { yyval.traducao = ""; }
-#line 1633 "y.tab.c"
+#line 1635 "y.tab.c"
     break;
 
   case 8: /* $@2: %empty  */
-#line 201 "sintatica.y"
+#line 203 "sintatica.y"
                                    { entraEscopo(); }
-#line 1639 "y.tab.c"
+#line 1641 "y.tab.c"
     break;
 
   case 9: /* $@3: %empty  */
-#line 201 "sintatica.y"
+#line 203 "sintatica.y"
                                                             { saiEscopo(); }
-#line 1645 "y.tab.c"
+#line 1647 "y.tab.c"
     break;
 
   case 10: /* FUNCAO: TK_TIPO TK_ID '(' PARAMS ')' $@2 BLOCO $@3  */
-#line 202 "sintatica.y"
+#line 204 "sintatica.y"
     {
         string tipoRetorno = pegaTipo(yyvsp[-7].label);
         string nome = yyvsp[-6].label;
@@ -1678,29 +1680,29 @@ yyreduce:
 
         yyval.traducao = tipoRetorno + " " + nome + "(" + yyvsp[-4].traducao + ") {\n" + corpoFuncao + "}\n";
     }
-#line 1682 "y.tab.c"
+#line 1684 "y.tab.c"
     break;
 
   case 11: /* PARAMS: PARAM ',' PARAMS  */
-#line 238 "sintatica.y"
+#line 240 "sintatica.y"
         { yyval.traducao = yyvsp[-2].traducao + ", " + yyvsp[0].traducao; }
-#line 1688 "y.tab.c"
+#line 1690 "y.tab.c"
     break;
 
   case 12: /* PARAMS: PARAM  */
-#line 240 "sintatica.y"
+#line 242 "sintatica.y"
         { yyval = yyvsp[0]; }
-#line 1694 "y.tab.c"
+#line 1696 "y.tab.c"
     break;
 
   case 13: /* PARAMS: %empty  */
-#line 242 "sintatica.y"
+#line 244 "sintatica.y"
         { yyval.traducao = ""; }
-#line 1700 "y.tab.c"
+#line 1702 "y.tab.c"
     break;
 
   case 14: /* PARAM: TK_TIPO TK_ID  */
-#line 247 "sintatica.y"
+#line 249 "sintatica.y"
     {
         string tipo = pegaTipo(yyvsp[-1].label);
         // Passa 'true' para o último argumento, marcando como parâmetro
@@ -1708,86 +1710,86 @@ yyreduce:
 
         yyval.traducao = tipo + " " + yyvsp[0].label;
     }
-#line 1712 "y.tab.c"
+#line 1714 "y.tab.c"
     break;
 
   case 15: /* $@6: %empty  */
-#line 298 "sintatica.y"
+#line 300 "sintatica.y"
                   { entraEscopo(); }
-#line 1718 "y.tab.c"
+#line 1720 "y.tab.c"
     break;
 
   case 16: /* BLOCO: '{' $@6 CMDS '}'  */
-#line 299 "sintatica.y"
+#line 301 "sintatica.y"
             {   
                 printTabelaSimbolos();
                 yyval.traducao = yyvsp[-1].traducao;
                 saiEscopo();
             }
-#line 1728 "y.tab.c"
+#line 1730 "y.tab.c"
     break;
 
   case 17: /* CMDS: CMD CMDS  */
-#line 307 "sintatica.y"
+#line 309 "sintatica.y"
             {
                 yyval.traducao = yyvsp[-1].traducao + yyvsp[0].traducao;
                 if(debug) cout << "[DEBUG] Comando processado. Acumulado:\n" << yyvsp[-1].traducao;
             }
-#line 1737 "y.tab.c"
+#line 1739 "y.tab.c"
     break;
 
   case 18: /* CMDS: %empty  */
-#line 312 "sintatica.y"
+#line 314 "sintatica.y"
             {
                 yyval.traducao = "";
             }
-#line 1745 "y.tab.c"
+#line 1747 "y.tab.c"
     break;
 
   case 19: /* CMD: EXP FIM_LINHA  */
-#line 317 "sintatica.y"
+#line 319 "sintatica.y"
                              { yyval.traducao = yyvsp[-1].traducao; }
-#line 1751 "y.tab.c"
+#line 1753 "y.tab.c"
     break;
 
   case 20: /* CMD: DECL  */
-#line 318 "sintatica.y"
+#line 320 "sintatica.y"
                              { yyval.traducao = yyvsp[0].traducao; }
-#line 1757 "y.tab.c"
+#line 1759 "y.tab.c"
     break;
 
   case 21: /* CMD: DECL FIM_LINHA  */
-#line 319 "sintatica.y"
+#line 321 "sintatica.y"
                              { yyval.traducao = yyvsp[-1].traducao; }
-#line 1763 "y.tab.c"
+#line 1765 "y.tab.c"
     break;
 
   case 22: /* CMD: ATR  */
-#line 320 "sintatica.y"
+#line 322 "sintatica.y"
                              { yyval.traducao = yyvsp[0].traducao; }
-#line 1769 "y.tab.c"
+#line 1771 "y.tab.c"
     break;
 
   case 23: /* CMD: ATR FIM_LINHA  */
-#line 321 "sintatica.y"
+#line 323 "sintatica.y"
                              { yyval.traducao = yyvsp[-1].traducao; }
-#line 1775 "y.tab.c"
+#line 1777 "y.tab.c"
     break;
 
   case 24: /* CMD: EXP  */
-#line 322 "sintatica.y"
+#line 324 "sintatica.y"
                              { yyval.traducao = yyvsp[0].traducao; }
-#line 1781 "y.tab.c"
+#line 1783 "y.tab.c"
     break;
 
   case 25: /* CMD: FIM_LINHA  */
-#line 323 "sintatica.y"
+#line 325 "sintatica.y"
                              { yyval.traducao = "";           }
-#line 1787 "y.tab.c"
+#line 1789 "y.tab.c"
     break;
 
   case 26: /* CMD: TK_IF '(' EXP ')' BLOCO  */
-#line 325 "sintatica.y"
+#line 327 "sintatica.y"
             {
                 string rotuloFimIf = novo_rotulo();
                 string temp_copia = insereTemporariasTabelaSimbolos("", "bool");
@@ -1800,11 +1802,11 @@ yyreduce:
                                  yyvsp[0].traducao +
                                  rotuloFimIf + ":\n";
             }
-#line 1804 "y.tab.c"
+#line 1806 "y.tab.c"
     break;
 
   case 27: /* CMD: TK_IF '(' EXP ')' BLOCO TK_ELSE BLOCO  */
-#line 338 "sintatica.y"
+#line 340 "sintatica.y"
             {
                 string rotuloElse = novo_rotulo();
                 string rotuloFimIfElse = novo_rotulo();
@@ -1821,22 +1823,22 @@ yyreduce:
                                  yyvsp[0].traducao +
                                  rotuloFimIfElse + ":\n";
             }
-#line 1825 "y.tab.c"
+#line 1827 "y.tab.c"
     break;
 
   case 28: /* $@7: %empty  */
-#line 354 "sintatica.y"
+#line 356 "sintatica.y"
                                    { /* Ação em tempo de redução */
                 string rotuloTeste = novo_rotulo();
                 string rotuloFimWhile = novo_rotulo();
                 pilhaRotulosProxIteracao.push(rotuloTeste);
                 pilhaRotulosFimLoop.push(rotuloFimWhile); 
             }
-#line 1836 "y.tab.c"
+#line 1838 "y.tab.c"
     break;
 
   case 29: /* CMD: TK_WHILE '(' EXP ')' $@7 BLOCO  */
-#line 361 "sintatica.y"
+#line 363 "sintatica.y"
             {
                 string rotuloTeste = pilhaRotulosProxIteracao.top();
                 string rotuloFimWhile = pilhaRotulosFimLoop.top();
@@ -1851,22 +1853,22 @@ yyreduce:
                 pilhaRotulosProxIteracao.pop();
                 pilhaRotulosFimLoop.pop();
             }
-#line 1855 "y.tab.c"
+#line 1857 "y.tab.c"
     break;
 
   case 30: /* $@8: %empty  */
-#line 375 "sintatica.y"
+#line 377 "sintatica.y"
                     {
                 string rotuloTeste = novo_rotulo();
                 string rotuloFimDoWhile = novo_rotulo();
                 pilhaRotulosProxIteracao.push(rotuloTeste);
                 pilhaRotulosFimLoop.push(rotuloFimDoWhile);
             }
-#line 1866 "y.tab.c"
+#line 1868 "y.tab.c"
     break;
 
   case 31: /* CMD: TK_DO $@8 BLOCO TK_WHILE '(' EXP ')' FIM_LINHA  */
-#line 382 "sintatica.y"
+#line 384 "sintatica.y"
             {
                 string rotuloTeste = pilhaRotulosProxIteracao.top();
                 string rotuloFimDoWhile = pilhaRotulosFimLoop.top();
@@ -1882,22 +1884,22 @@ yyreduce:
                 pilhaRotulosProxIteracao.pop();
                 pilhaRotulosFimLoop.pop();
             }
-#line 1886 "y.tab.c"
+#line 1888 "y.tab.c"
     break;
 
   case 32: /* $@9: %empty  */
-#line 397 "sintatica.y"
+#line 399 "sintatica.y"
                                                                {
                 string rotuloIncremento = novo_rotulo();
                 string rotuloFimFor = novo_rotulo();
                 pilhaRotulosProxIteracao.push(rotuloIncremento);
                 pilhaRotulosFimLoop.push(rotuloFimFor);
             }
-#line 1897 "y.tab.c"
+#line 1899 "y.tab.c"
     break;
 
   case 33: /* CMD: TK_FOR '(' FOR_INICIA ';' EXP ';' FOR_INCREM ')' $@9 BLOCO  */
-#line 404 "sintatica.y"
+#line 406 "sintatica.y"
             {
                 string rotuloIncrementoReal = pilhaRotulosProxIteracao.top();
                 string rotuloFimForReal = pilhaRotulosFimLoop.top();
@@ -1916,33 +1918,33 @@ yyreduce:
                 pilhaRotulosProxIteracao.pop();
                 pilhaRotulosFimLoop.pop();
             }
-#line 1920 "y.tab.c"
+#line 1922 "y.tab.c"
     break;
 
   case 34: /* CMD: TK_BREAK FIM_LINHA  */
-#line 423 "sintatica.y"
+#line 425 "sintatica.y"
             {
                 if (pilhaRotulosFimLoop.empty()) {
                     yyerror("Erro semântico: 'break' fora de um laço.");
                 }
                 yyval.traducao = "\tgoto " + pilhaRotulosFimLoop.top() + ";\n";
             }
-#line 1931 "y.tab.c"
+#line 1933 "y.tab.c"
     break;
 
   case 35: /* CMD: TK_CONTINUE FIM_LINHA  */
-#line 430 "sintatica.y"
+#line 432 "sintatica.y"
             {
                 if (pilhaRotulosProxIteracao.empty()) {
                     yyerror("Erro semântico: 'continue' fora de um laço.");
                 }
                 yyval.traducao = "\tgoto " + pilhaRotulosProxIteracao.top() + ";\n";
             }
-#line 1942 "y.tab.c"
+#line 1944 "y.tab.c"
     break;
 
   case 36: /* CMD: TK_PRINT '(' EXP ')' FIM_LINHA  */
-#line 438 "sintatica.y"
+#line 440 "sintatica.y"
             {
                 if (yyvsp[-2].tipo == "string_literal") {
                     // Lógica do segundo código: aloca, imprime e libera imediatamente.
@@ -1973,11 +1975,11 @@ yyreduce:
                     yyval.traducao = yyvsp[-2].traducao + "\tprintf(\"" + formato + "\\n\", " + yyvsp[-2].label + ");\n";
                 }
             }
-#line 1977 "y.tab.c"
+#line 1979 "y.tab.c"
     break;
 
   case 37: /* CMD: TK_SCAN '(' TK_ID ')' FIM_LINHA  */
-#line 470 "sintatica.y"
+#line 472 "sintatica.y"
             {
                 TIPO_SIMBOLO varSimbolo;
                 if (!verificaTabelaSimbolos(yyvsp[-2].label)) {
@@ -2002,72 +2004,72 @@ yyreduce:
                     yyval.traducao = "\tscanf(\"" + formato + "\", " + argumentoScan + ");\n";
                 }
             }
-#line 2006 "y.tab.c"
+#line 2008 "y.tab.c"
     break;
 
   case 38: /* CMD: TK_RETURN EXP FIM_LINHA  */
-#line 495 "sintatica.y"
+#line 497 "sintatica.y"
             {
                 yyval.traducao = yyvsp[-1].traducao + "\treturn " + yyvsp[-1].label + ";\n";
             }
-#line 2014 "y.tab.c"
+#line 2016 "y.tab.c"
     break;
 
   case 39: /* CMD: TK_RETURN EXP  */
-#line 499 "sintatica.y"
+#line 501 "sintatica.y"
             {
                 yyval.traducao = yyvsp[0].traducao + "\treturn " + yyvsp[0].label + ";\n";
             }
-#line 2022 "y.tab.c"
+#line 2024 "y.tab.c"
     break;
 
   case 40: /* FOR_INICIA: DECL  */
-#line 505 "sintatica.y"
+#line 507 "sintatica.y"
                    { yyval.traducao = yyvsp[0].traducao; }
-#line 2028 "y.tab.c"
+#line 2030 "y.tab.c"
     break;
 
   case 41: /* FOR_INICIA: ATR  */
-#line 506 "sintatica.y"
+#line 508 "sintatica.y"
                   { yyval.traducao = yyvsp[0].traducao; }
-#line 2034 "y.tab.c"
+#line 2036 "y.tab.c"
     break;
 
   case 42: /* FOR_INICIA: %empty  */
-#line 507 "sintatica.y"
+#line 509 "sintatica.y"
               { yyval.traducao = ""; }
-#line 2040 "y.tab.c"
+#line 2042 "y.tab.c"
     break;
 
   case 43: /* FOR_INCREM: ATR  */
-#line 509 "sintatica.y"
+#line 511 "sintatica.y"
                   { yyval.traducao = yyvsp[0].traducao; }
-#line 2046 "y.tab.c"
+#line 2048 "y.tab.c"
     break;
 
   case 44: /* FOR_INCREM: EXP  */
-#line 510 "sintatica.y"
+#line 512 "sintatica.y"
                   { yyval.traducao = yyvsp[0].traducao; }
-#line 2052 "y.tab.c"
+#line 2054 "y.tab.c"
     break;
 
   case 45: /* FOR_INCREM: %empty  */
-#line 511 "sintatica.y"
+#line 513 "sintatica.y"
               { yyval.traducao = ""; }
-#line 2058 "y.tab.c"
+#line 2060 "y.tab.c"
     break;
 
   case 46: /* DECL: TK_TIPO TK_ID  */
-#line 516 "sintatica.y"
+#line 518 "sintatica.y"
             {
                 insereFixasTabelaSimbolos(yyvsp[0].label, yyvsp[-1].label);
                 yyval.traducao = ""; // A declaração real ocorre no início do código C
             }
-#line 2067 "y.tab.c"
+#line 2069 "y.tab.c"
     break;
 
   case 47: /* DECL: TK_TIPO TK_ID '=' EXP  */
-#line 522 "sintatica.y"
+#line 524 "sintatica.y"
             {
                 insereFixasTabelaSimbolos(yyvsp[-2].label, yyvsp[-3].label);
                 TIPO_SIMBOLO varSimbolo = pegaVariavelTabelaSimbolos(yyvsp[-2].label);
@@ -2100,11 +2102,11 @@ yyreduce:
                     yyval.traducao = yyvsp[0].traducao + "\t" + varSimbolo.label + " = " + yyvsp[0].label + ";\n";
                 }
             }
-#line 2104 "y.tab.c"
+#line 2106 "y.tab.c"
     break;
 
   case 48: /* DECL: TK_TIPO TK_ID '[' TK_INT ']' '[' TK_INT ']'  */
-#line 555 "sintatica.y"
+#line 557 "sintatica.y"
             {
                 string tipo = pegaTipo(yyvsp[-7].label);
                 int tamanho1 = stoi(yyvsp[-4].label);
@@ -2112,22 +2114,22 @@ yyreduce:
                 insereFixasTabelaSimbolos(yyvsp[-6].label, yyvsp[-7].label, true, tamanho1, tamanho2);
                 yyval.traducao = "";
             }
-#line 2116 "y.tab.c"
+#line 2118 "y.tab.c"
     break;
 
   case 49: /* DECL: TK_TIPO TK_ID '[' TK_INT ']'  */
-#line 563 "sintatica.y"
+#line 565 "sintatica.y"
             {
                 string tipo = pegaTipo(yyvsp[-4].label);
                 int tamanho = stoi(yyvsp[-1].label);
                 insereFixasTabelaSimbolos(yyvsp[-3].label, yyvsp[-4].label, true, tamanho);
                 yyval.traducao = "";
             }
-#line 2127 "y.tab.c"
+#line 2129 "y.tab.c"
     break;
 
   case 50: /* ATR: TK_ID '=' EXP  */
-#line 572 "sintatica.y"
+#line 574 "sintatica.y"
             {
                 TIPO_SIMBOLO varEsquerda = pegaVariavelTabelaSimbolos(yyvsp[-2].label);
                 string tipoExp = pegaTipo(yyvsp[0].tipo);
@@ -2163,11 +2165,11 @@ yyreduce:
                     yyval.traducao = yyvsp[0].traducao + "\t" + varEsquerda.label + " = " + yyvsp[0].label + ";\n";
                 }
             }
-#line 2167 "y.tab.c"
+#line 2169 "y.tab.c"
     break;
 
   case 51: /* ATR: TK_ID TK_MAIS_IGUAL EXP  */
-#line 608 "sintatica.y"
+#line 610 "sintatica.y"
             {
                 TIPO_SIMBOLO varEsquerda = pegaVariavelTabelaSimbolos(yyvsp[-2].label);
                 string tipoResultado = infereTipo(varEsquerda.tipoVariavel, yyvsp[0].tipo);
@@ -2186,11 +2188,11 @@ yyreduce:
                 yyval.label = varEsquerda.label;
                 yyval.tipo = varEsquerda.tipoVariavel;
             }
-#line 2190 "y.tab.c"
+#line 2192 "y.tab.c"
     break;
 
   case 52: /* ATR: TK_ID TK_MENOS_IGUAL EXP  */
-#line 627 "sintatica.y"
+#line 629 "sintatica.y"
             {
                 TIPO_SIMBOLO varEsquerda = pegaVariavelTabelaSimbolos(yyvsp[-2].label);
                 string tipoResultado = infereTipo(varEsquerda.tipoVariavel, yyvsp[0].tipo);
@@ -2207,11 +2209,11 @@ yyreduce:
                 yyval.label = varEsquerda.label;
                 yyval.tipo = varEsquerda.tipoVariavel;
             }
-#line 2211 "y.tab.c"
+#line 2213 "y.tab.c"
     break;
 
   case 53: /* ATR: TK_ID TK_MULT_IGUAL EXP  */
-#line 644 "sintatica.y"
+#line 646 "sintatica.y"
             {
                 TIPO_SIMBOLO varEsquerda = pegaVariavelTabelaSimbolos(yyvsp[-2].label);
                 string tipoResultado = infereTipo(varEsquerda.tipoVariavel, yyvsp[0].tipo);
@@ -2228,11 +2230,11 @@ yyreduce:
                 yyval.label = varEsquerda.label;
                 yyval.tipo = varEsquerda.tipoVariavel;
             }
-#line 2232 "y.tab.c"
+#line 2234 "y.tab.c"
     break;
 
   case 54: /* ATR: TK_ID TK_DIV_IGUAL EXP  */
-#line 661 "sintatica.y"
+#line 663 "sintatica.y"
             {
                 TIPO_SIMBOLO varEsquerda = pegaVariavelTabelaSimbolos(yyvsp[-2].label);
                 string tipoResultado = infereTipo(varEsquerda.tipoVariavel, yyvsp[0].tipo);
@@ -2249,11 +2251,11 @@ yyreduce:
                 yyval.label = varEsquerda.label;
                 yyval.tipo = varEsquerda.tipoVariavel;
             }
-#line 2253 "y.tab.c"
+#line 2255 "y.tab.c"
     break;
 
   case 55: /* ATR: TK_ID '[' EXP ']' '=' EXP  */
-#line 678 "sintatica.y"
+#line 680 "sintatica.y"
             {
                 TIPO_SIMBOLO temp = pegaVariavelTabelaSimbolos(yyvsp[-5].label);
                 if (!temp.isArray) yyerror("Variável '" + yyvsp[-5].label + "' não é um vetor.");
@@ -2263,11 +2265,11 @@ yyreduce:
                 yyval.label = temp.label;
                 yyval.traducao = yyvsp[-3].traducao + yyvsp[0].traducao + "\t" + temp.label + "[" + yyvsp[-3].label + "] = " + yyvsp[0].label + ";\n";
             }
-#line 2267 "y.tab.c"
+#line 2269 "y.tab.c"
     break;
 
   case 56: /* ATR: TK_ID '[' EXP ']' '[' EXP ']' '=' EXP  */
-#line 688 "sintatica.y"
+#line 690 "sintatica.y"
             {
                 TIPO_SIMBOLO mat = pegaVariavelTabelaSimbolos(yyvsp[-8].label);
                 if (!mat.isArray || mat.arraySize2 == 0) yyerror("'" + yyvsp[-8].label + "' não é matriz 2D.");
@@ -2282,11 +2284,11 @@ yyreduce:
                                  yyvsp[0].traducao +
                                  "\t" + mat.label + "[" + tempIdx + "] = " + yyvsp[0].label + ";\n";
             }
-#line 2286 "y.tab.c"
+#line 2288 "y.tab.c"
     break;
 
   case 57: /* ATR: TK_ID '=' TK_ID '[' EXP ']' '[' EXP ']'  */
-#line 703 "sintatica.y"
+#line 705 "sintatica.y"
             {
                 TIPO_SIMBOLO mat = pegaVariavelTabelaSimbolos(yyvsp[-6].label);
                 if (!mat.isArray || mat.arraySize2 == 0) yyerror("'" + yyvsp[-6].label + "' não é matriz 2D.");
@@ -2303,11 +2305,11 @@ yyreduce:
                 yyval.label = yyvsp[-8].label;
                 yyval.tipo  = destino.tipoVariavel;
             }
-#line 2307 "y.tab.c"
+#line 2309 "y.tab.c"
     break;
 
   case 58: /* ATR: TK_ID '=' TK_ID '[' EXP ']'  */
-#line 720 "sintatica.y"
+#line 722 "sintatica.y"
             {
                 TIPO_SIMBOLO vet = pegaVariavelTabelaSimbolos(yyvsp[-3].label);
                 if (!vet.isArray || vet.arraySize2 != 0) yyerror("'" + yyvsp[-3].label + "' não é vetor 1D.");
@@ -2319,11 +2321,11 @@ yyreduce:
                 yyval.label = destino.label;
                 yyval.tipo  = destino.tipoVariavel;
             }
-#line 2323 "y.tab.c"
+#line 2325 "y.tab.c"
     break;
 
   case 59: /* EXP: EXP '+' TERMO  */
-#line 734 "sintatica.y"
+#line 736 "sintatica.y"
             {   
                 yyval.tipo = infereTipo(yyvsp[-2].tipo, yyvsp[0].tipo);
                 yyval.traducao = yyvsp[-2].traducao + yyvsp[0].traducao;
@@ -2373,11 +2375,11 @@ yyreduce:
                     }
                 }
             }
-#line 2377 "y.tab.c"
+#line 2379 "y.tab.c"
     break;
 
   case 60: /* EXP: EXP '-' TERMO  */
-#line 784 "sintatica.y"
+#line 786 "sintatica.y"
             {   
                 yyval.tipo = infereTipo(yyvsp[-2].tipo, yyvsp[0].tipo);
                 yyval.label = insereTemporariasTabelaSimbolos("", yyval.tipo);
@@ -2397,105 +2399,105 @@ yyreduce:
                     yyval.traducao += "\t" + yyval.label + " = " + yyvsp[-2].label + " - " + yyvsp[0].label + ";\n";
                 }
             }
-#line 2401 "y.tab.c"
+#line 2403 "y.tab.c"
     break;
 
   case 61: /* EXP: EXP '>' TERMO  */
-#line 804 "sintatica.y"
+#line 806 "sintatica.y"
             {   
                 yyval.tipo = "bool";
                 yyval.label = insereTemporariasTabelaSimbolos("", yyval.tipo);
                 if(yyvsp[-2].tipo == "bool" || yyvsp[0].tipo == "bool" || yyvsp[-2].tipo == "string" || yyvsp[0].tipo == "string") yyerror("Operandos inválidos\n");
                 yyval.traducao = yyvsp[-2].traducao + yyvsp[0].traducao + "\t" + yyval.label + " = " + yyvsp[-2].label + " > " + yyvsp[0].label + ";\n";
             }
-#line 2412 "y.tab.c"
+#line 2414 "y.tab.c"
     break;
 
   case 62: /* EXP: EXP '<' TERMO  */
-#line 811 "sintatica.y"
+#line 813 "sintatica.y"
             {
                 yyval.tipo = "bool";
                 yyval.label = insereTemporariasTabelaSimbolos("", yyval.tipo);
                 if(yyvsp[-2].tipo == "bool" || yyvsp[0].tipo == "bool" || yyvsp[-2].tipo == "string" || yyvsp[0].tipo == "string") yyerror("Operandos inválidos\n");
                 yyval.traducao = yyvsp[-2].traducao + yyvsp[0].traducao + "\t" + yyval.label + " = " + yyvsp[-2].label + " < " + yyvsp[0].label + ";\n";
             }
-#line 2423 "y.tab.c"
+#line 2425 "y.tab.c"
     break;
 
   case 63: /* EXP: EXP TK_MAIOR_IGUAL TERMO  */
-#line 818 "sintatica.y"
+#line 820 "sintatica.y"
             {
                 yyval.tipo = "bool";
                 yyval.label = insereTemporariasTabelaSimbolos("", yyval.tipo);
                 if(yyvsp[-2].tipo == "bool" || yyvsp[0].tipo == "bool" || yyvsp[-2].tipo == "string" || yyvsp[0].tipo == "string") yyerror("Operandos inválidos\n");
                 yyval.traducao = yyvsp[-2].traducao + yyvsp[0].traducao + "\t" + yyval.label + " = " + yyvsp[-2].label + " >= " + yyvsp[0].label + ";\n";
             }
-#line 2434 "y.tab.c"
+#line 2436 "y.tab.c"
     break;
 
   case 64: /* EXP: EXP TK_MENOR_IGUAL TERMO  */
-#line 825 "sintatica.y"
+#line 827 "sintatica.y"
             {
                 yyval.tipo = "bool";
                 yyval.label = insereTemporariasTabelaSimbolos("", yyval.tipo);
                 if(yyvsp[-2].tipo == "bool" || yyvsp[0].tipo == "bool" || yyvsp[-2].tipo == "string" || yyvsp[0].tipo == "string") yyerror("Operandos inválidos\n");
                 yyval.traducao = yyvsp[-2].traducao + yyvsp[0].traducao + "\t" + yyval.label + " = " + yyvsp[-2].label + " <= " + yyvsp[0].label + ";\n";
             }
-#line 2445 "y.tab.c"
+#line 2447 "y.tab.c"
     break;
 
   case 65: /* EXP: EXP TK_DIFERENTE TERMO  */
-#line 832 "sintatica.y"
+#line 834 "sintatica.y"
             {
                 yyval.tipo = "bool";
                 yyval.label = insereTemporariasTabelaSimbolos("", yyval.tipo);
                 if(yyvsp[-2].tipo == "bool" || yyvsp[0].tipo == "bool" || yyvsp[-2].tipo == "string" || yyvsp[0].tipo == "string") yyerror("Operandos inválidos\n");
                 yyval.traducao = yyvsp[-2].traducao + yyvsp[0].traducao + "\t" + yyval.label + " = " + yyvsp[-2].label + " != " + yyvsp[0].label + ";\n";
             }
-#line 2456 "y.tab.c"
+#line 2458 "y.tab.c"
     break;
 
   case 66: /* EXP: EXP TK_IGUAL TERMO  */
-#line 839 "sintatica.y"
+#line 841 "sintatica.y"
             {
                 yyval.tipo = "bool";
                 yyval.label = insereTemporariasTabelaSimbolos("", yyval.tipo);
                 if(yyvsp[-2].tipo == "bool" || yyvsp[0].tipo == "bool" || yyvsp[-2].tipo == "string" || yyvsp[0].tipo == "string") yyerror("Operandos inválidos\n");
                 yyval.traducao = yyvsp[-2].traducao + yyvsp[0].traducao + "\t" + yyval.label + " = " + yyvsp[-2].label + " == " + yyvsp[0].label + ";\n";
             }
-#line 2467 "y.tab.c"
+#line 2469 "y.tab.c"
     break;
 
   case 67: /* EXP: EXP TK_E_LOGICO TERMO  */
-#line 846 "sintatica.y"
+#line 848 "sintatica.y"
             {
                 yyval.tipo = "bool";
                 yyval.label = insereTemporariasTabelaSimbolos("", yyval.tipo);
                 if(yyvsp[-2].tipo != "bool" || yyvsp[0].tipo != "bool") yyerror("Operandos inválidos\n");
                 yyval.traducao = yyvsp[-2].traducao + yyvsp[0].traducao + "\t" + yyval.label + " = " + yyvsp[-2].label + " && " + yyvsp[0].label + ";\n";   
             }
-#line 2478 "y.tab.c"
+#line 2480 "y.tab.c"
     break;
 
   case 68: /* EXP: EXP TK_OU_LOGICO TERMO  */
-#line 853 "sintatica.y"
+#line 855 "sintatica.y"
             {
                 yyval.tipo = "bool";
                 yyval.label = insereTemporariasTabelaSimbolos("", yyval.tipo);
                 if(yyvsp[-2].tipo != "bool" || yyvsp[0].tipo != "bool") yyerror("Operandos inválidos\n");
                 yyval.traducao = yyvsp[-2].traducao + yyvsp[0].traducao + "\t" + yyval.label + " = " + yyvsp[-2].label + " || " + yyvsp[0].label + ";\n";   
             }
-#line 2489 "y.tab.c"
+#line 2491 "y.tab.c"
     break;
 
   case 69: /* EXP: TERMO  */
-#line 860 "sintatica.y"
+#line 862 "sintatica.y"
             { yyval = yyvsp[0]; }
-#line 2495 "y.tab.c"
+#line 2497 "y.tab.c"
     break;
 
   case 70: /* TERMO: TERMO '*' POTENCIA  */
-#line 864 "sintatica.y"
+#line 866 "sintatica.y"
             {   
                 yyval.tipo = infereTipo(yyvsp[-2].tipo, yyvsp[0].tipo);
                 yyval.label = insereTemporariasTabelaSimbolos("", yyval.tipo);
@@ -2515,11 +2517,11 @@ yyreduce:
                     yyval.traducao += "\t" + yyval.label + " = " + yyvsp[-2].label + " * " + yyvsp[0].label + ";\n";
                 }
             }
-#line 2519 "y.tab.c"
+#line 2521 "y.tab.c"
     break;
 
   case 71: /* TERMO: TERMO '/' POTENCIA  */
-#line 884 "sintatica.y"
+#line 886 "sintatica.y"
             { 
                 yyval.tipo = infereTipo(yyvsp[-2].tipo, yyvsp[0].tipo);
                 yyval.label = insereTemporariasTabelaSimbolos("", yyval.tipo);
@@ -2539,17 +2541,17 @@ yyreduce:
                     yyval.traducao += "\t" + yyval.label + " = " + yyvsp[-2].label + " / " + yyvsp[0].label + ";\n";
                 }
             }
-#line 2543 "y.tab.c"
+#line 2545 "y.tab.c"
     break;
 
   case 72: /* TERMO: POTENCIA  */
-#line 904 "sintatica.y"
+#line 906 "sintatica.y"
             { yyval = yyvsp[0]; }
-#line 2549 "y.tab.c"
+#line 2551 "y.tab.c"
     break;
 
   case 73: /* FATOR: TK_ID '(' LISTA_ARGS ')'  */
-#line 908 "sintatica.y"
+#line 910 "sintatica.y"
             {
                 string nomeFunc = yyvsp[-3].label;
                 
@@ -2564,11 +2566,11 @@ yyreduce:
                 yyval.tipo = tipoRetorno;
                 yyval.traducao = yyvsp[-1].traducao + "\t" + yyval.label + " = " + nomeFunc + "(" + yyvsp[-1].label + ");\n";
             }
-#line 2568 "y.tab.c"
+#line 2570 "y.tab.c"
     break;
 
   case 74: /* FATOR: '-' FATOR  */
-#line 923 "sintatica.y"
+#line 925 "sintatica.y"
             {
                 if (yyvsp[0].tipo != "int" && yyvsp[0].tipo != "float") {
                     yyerror("Operador '-' unario so pode ser aplicado a tipos numericos (int, float).");
@@ -2577,11 +2579,11 @@ yyreduce:
                 yyval.label = insereTemporariasTabelaSimbolos("", yyval.tipo);
                 yyval.traducao = yyvsp[0].traducao + "\t" + yyval.label + " = -" + yyvsp[0].label + ";\n";
             }
-#line 2581 "y.tab.c"
+#line 2583 "y.tab.c"
     break;
 
   case 75: /* FATOR: TK_INCREMENTO TK_ID  */
-#line 932 "sintatica.y"
+#line 934 "sintatica.y"
             {
                 TIPO_SIMBOLO var = pegaVariavelTabelaSimbolos(yyvsp[0].label);
                 if (var.tipoVariavel != "int" && var.tipoVariavel != "float") yyerror("Operador '++' so pode ser aplicado a variaveis numericas.");
@@ -2599,11 +2601,11 @@ yyreduce:
                 yyval.traducao = ss.str();
                 yyval.label = var.label;
             }
-#line 2603 "y.tab.c"
+#line 2605 "y.tab.c"
     break;
 
   case 76: /* FATOR: TK_ID TK_INCREMENTO  */
-#line 950 "sintatica.y"
+#line 952 "sintatica.y"
             {
                 TIPO_SIMBOLO var = pegaVariavelTabelaSimbolos(yyvsp[-1].label);
                 if (var.tipoVariavel != "int" && var.tipoVariavel != "float") yyerror("Operador '++' so pode ser aplicado a variaveis numericas.");
@@ -2621,11 +2623,11 @@ yyreduce:
                 yyval.traducao = ss.str();
                 yyval.label = temp_retorno;
             }
-#line 2625 "y.tab.c"
+#line 2627 "y.tab.c"
     break;
 
   case 77: /* FATOR: TK_DECREMENTO TK_ID  */
-#line 968 "sintatica.y"
+#line 970 "sintatica.y"
             {
                 TIPO_SIMBOLO var = pegaVariavelTabelaSimbolos(yyvsp[0].label);
                 if (var.tipoVariavel != "int" && var.tipoVariavel != "float") yyerror("Operador '--' so pode ser aplicado a variaveis numericas.");
@@ -2643,11 +2645,11 @@ yyreduce:
                 yyval.traducao = ss.str();
                 yyval.label = var.label;
             }
-#line 2647 "y.tab.c"
+#line 2649 "y.tab.c"
     break;
 
   case 78: /* FATOR: TK_ID TK_DECREMENTO  */
-#line 986 "sintatica.y"
+#line 988 "sintatica.y"
             {
                 TIPO_SIMBOLO var = pegaVariavelTabelaSimbolos(yyvsp[-1].label);
                 if (var.tipoVariavel != "int" && var.tipoVariavel != "float") yyerror("Operador '--' so pode ser aplicado a variaveis numericas.");
@@ -2665,27 +2667,27 @@ yyreduce:
                 yyval.traducao = ss.str();
                 yyval.label = temp_retorno;
             }
-#line 2669 "y.tab.c"
+#line 2671 "y.tab.c"
     break;
 
   case 79: /* FATOR: '(' EXP ')'  */
-#line 1004 "sintatica.y"
+#line 1006 "sintatica.y"
             { yyval = yyvsp[-1]; }
-#line 2675 "y.tab.c"
+#line 2677 "y.tab.c"
     break;
 
   case 80: /* FATOR: '(' TK_TIPO ')' FATOR  */
-#line 1006 "sintatica.y"
+#line 1008 "sintatica.y"
             {   
                 yyval.label = insereTemporariasTabelaSimbolos("", yyvsp[-2].label);
                 yyval.tipo = yyvsp[-2].label;
                 yyval.traducao = yyvsp[0].traducao + "\t" + yyval.label + " = (" + pegaTipo(yyvsp[-2].label) + ") " + yyvsp[0].label + ";\n";
             }
-#line 2685 "y.tab.c"
+#line 2687 "y.tab.c"
     break;
 
   case 81: /* FATOR: TK_ID  */
-#line 1012 "sintatica.y"
+#line 1014 "sintatica.y"
             {
                 if (!verificaTabelaSimbolos(yyvsp[0].label)) {
                     yyerror("Variável não declarada: '" + yyvsp[0].label + "'");
@@ -2705,11 +2707,11 @@ yyreduce:
                     yyerror("Acesso inválido: vetor/matriz '" + simbolo.nomeVariavel + "' usado sem índice.");
                 }
             }
-#line 2709 "y.tab.c"
+#line 2711 "y.tab.c"
     break;
 
   case 82: /* FATOR: TK_NEGACAO TK_ID  */
-#line 1032 "sintatica.y"
+#line 1034 "sintatica.y"
             {
                 yyval.tipo = "bool";
                 TIPO_SIMBOLO temp = pegaVariavelTabelaSimbolos(yyvsp[0].label);
@@ -2717,31 +2719,32 @@ yyreduce:
                 yyval.label = insereTemporariasTabelaSimbolos("", yyval.tipo);
                 yyval.traducao = "\t" + yyval.label + " = !" + temp.label + ";\n";
             }
-#line 2721 "y.tab.c"
+#line 2723 "y.tab.c"
     break;
 
   case 83: /* FATOR: TK_INT  */
-#line 1040 "sintatica.y"
+#line 1042 "sintatica.y"
             {   
                 yyval.label = insereTemporariasTabelaSimbolos("", "int");
                 yyval.traducao = "\t" + yyval.label + " = " + yyvsp[0].label + ";\n";
                 yyval.tipo = "int"; 
             }
-#line 2731 "y.tab.c"
+#line 2733 "y.tab.c"
     break;
 
   case 84: /* FATOR: TK_FLOAT  */
-#line 1046 "sintatica.y"
+#line 1048 "sintatica.y"
             {   
+                cout << "testnado";
                 yyval.label = insereTemporariasTabelaSimbolos("", "float");
                 yyval.traducao = "\t" + yyval.label + " = " + yyvsp[0].label + ";\n"; 
                 yyval.tipo = "float"; 
             }
-#line 2741 "y.tab.c"
+#line 2744 "y.tab.c"
     break;
 
   case 85: /* FATOR: TK_BOOLEAN  */
-#line 1052 "sintatica.y"
+#line 1055 "sintatica.y"
             {
                 yyval.label = insereTemporariasTabelaSimbolos("", "bool");
                 string valor = pegaBooleano(yyvsp[0].label);
@@ -2749,21 +2752,21 @@ yyreduce:
                 yyval.traducao = "\t" + yyval.label + " = " + valor + ";\n";
                 yyval.tipo = "bool"; 
             }
-#line 2753 "y.tab.c"
+#line 2756 "y.tab.c"
     break;
 
   case 86: /* FATOR: TK_CHAR  */
-#line 1060 "sintatica.y"
+#line 1063 "sintatica.y"
             {
                 yyval.label = insereTemporariasTabelaSimbolos("", "char");
                 yyval.traducao = "\t" + yyval.label + " = " + yyvsp[0].label + ";\n";
                 yyval.tipo = "char"; 
             }
-#line 2763 "y.tab.c"
+#line 2766 "y.tab.c"
     break;
 
   case 87: /* FATOR: TK_STRING  */
-#line 1067 "sintatica.y"
+#line 1070 "sintatica.y"
             {
                 // Apenas passa o literal (ex: "meu texto") para cima na árvore
                 // e marca o tipo como 'string_literal' para que outras regras saibam
@@ -2772,11 +2775,11 @@ yyreduce:
                 yyval.traducao = yyvsp[0].traducao;
                 yyval.tipo = "string_literal"; 
             }
-#line 2776 "y.tab.c"
+#line 2779 "y.tab.c"
     break;
 
   case 88: /* FATOR: TK_ID '[' EXP ']'  */
-#line 1075 "sintatica.y"
+#line 1078 "sintatica.y"
                                 {
                 TIPO_SIMBOLO vet = pegaVariavelTabelaSimbolos(yyvsp[-3].label);
                 if (!vet.isArray || vet.arraySize2 != 0) yyerror("'" + yyvsp[-3].label + "' não é vetor 1D.");
@@ -2787,11 +2790,11 @@ yyreduce:
                 yyval.label = temp;
                 yyval.tipo = vet.tipoVariavel;
             }
-#line 2791 "y.tab.c"
+#line 2794 "y.tab.c"
     break;
 
   case 89: /* FATOR: TK_ID '[' EXP ']' '[' EXP ']'  */
-#line 1085 "sintatica.y"
+#line 1088 "sintatica.y"
                                             {
                 TIPO_SIMBOLO mat = pegaVariavelTabelaSimbolos(yyvsp[-6].label);
                 if (!mat.isArray || mat.arraySize2 == 0) yyerror("'" + yyvsp[-6].label + "' não é matriz 2D.");
@@ -2807,35 +2810,35 @@ yyreduce:
                 yyval.label = tempRes;
                 yyval.tipo = mat.tipoVariavel;
             }
-#line 2811 "y.tab.c"
+#line 2814 "y.tab.c"
     break;
 
   case 90: /* LISTA_ARGS: EXP ',' LISTA_ARGS  */
-#line 1104 "sintatica.y"
+#line 1107 "sintatica.y"
         { 
             yyval.traducao = yyvsp[-2].traducao + yyvsp[0].traducao; 
             yyval.label = yyvsp[-2].label + ", " + yyvsp[0].label;
         }
-#line 2820 "y.tab.c"
+#line 2823 "y.tab.c"
     break;
 
   case 91: /* LISTA_ARGS: EXP  */
-#line 1109 "sintatica.y"
+#line 1112 "sintatica.y"
         { yyval = yyvsp[0]; }
-#line 2826 "y.tab.c"
+#line 2829 "y.tab.c"
     break;
 
   case 92: /* LISTA_ARGS: %empty  */
-#line 1111 "sintatica.y"
+#line 1114 "sintatica.y"
         {
             yyval.traducao = "";
             yyval.label = "";
         }
-#line 2835 "y.tab.c"
+#line 2838 "y.tab.c"
     break;
 
   case 93: /* POTENCIA: FATOR TK_POTENCIA POTENCIA  */
-#line 1119 "sintatica.y"
+#line 1122 "sintatica.y"
         {
             // Verificação: Nossa função helper espera um expoente inteiro.
             if (yyvsp[0].tipo != "int") {
@@ -2862,17 +2865,17 @@ yyreduce:
             yyval.traducao = traducao_preparacao +
                          "\t" + yyval.label + " = potencia_helper(" + base + ", " + expoente + ");\n";
         }
-#line 2866 "y.tab.c"
+#line 2869 "y.tab.c"
     break;
 
   case 94: /* POTENCIA: FATOR  */
-#line 1146 "sintatica.y"
+#line 1149 "sintatica.y"
         { yyval = yyvsp[0]; }
-#line 2872 "y.tab.c"
+#line 2875 "y.tab.c"
     break;
 
 
-#line 2876 "y.tab.c"
+#line 2879 "y.tab.c"
 
       default: break;
     }
@@ -3065,7 +3068,7 @@ yyreturnlab:
   return yyresult;
 }
 
-#line 1148 "sintatica.y"
+#line 1151 "sintatica.y"
 
 
 #include "lex.yy.c"

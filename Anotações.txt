@@ -35,10 +35,83 @@ nmr principal() {
     vet[3] = 1
     fala(vet[3])
 }
+
 Teste 4 - Matrizes
-Teste 5 - Inicializações
+
+nmr principal() {
+
+    nmr mat[10][10]    
+    mat[3][2] = 1*2
+    fala(mat[3][2])
+}
+
+Teste 5 - Inicializações - [X]
 Teste 6 - Controle de laço
+
+nmr principal() {
+   nmr val = 0
+   ainda (val < 10){
+      fala(val)
+      val += 1
+         se (val == 4){
+            fala(99)
+            pare
+         }
+   }  
+fala(0)
+}
+
+nmr principal() {
+   nmr num = 0
+   ainda (num < 5){
+      num = num + 1
+      se (num == 2){
+         fala(77)
+         continua
+      }
+      fala(num * 10)
+   }
+fala(0)
+}
+
 Teste 7 - Subprograma
+
+nmr secundaria(nmr a, nmr b){
+   toma a+b
+}
+
+nmr principal() {
+   nmr x = 5
+   nmr y = 10
+   nmr z = secundaria(x,y)
+   fala(z)
+}
+
 Teste 8 - Unário
+
+nmr principal() {
+   corre(nmr i = 0; i < 10; i++){
+      fala(i)
+   }
+}
+
 Teste 9 - Composto
+
+nmr principal() {
+   corre(nmr i = 0; i < 10; i += 2){
+      fala(i)
+   }
+}
+
 Teste 10 - Extra
+
+nmr principal() {
+   ncv x
+   x = 3**3
+   fala(x)
+}
+
+
+
+8 - CONTINUE
+

@@ -954,7 +954,7 @@ YY_RULE_SETUP
 case 27:
 YY_RULE_SETUP
 #line 50 "lexica.l"
-{ printf("[DEBUG LEXER] Palavra 'toma' encontrada! Retornando TK_RETURN.\n"); return TK_RETURN; }
+{ return TK_RETURN; }
 	YY_BREAK
 case 28:
 YY_RULE_SETUP
