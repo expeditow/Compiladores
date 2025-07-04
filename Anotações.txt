@@ -1,0 +1,44 @@
+Teste 1 - String
+
+nmr principal() {
+    falada a = "Ola,"
+    falada b = " Professor!"
+    falada c = a + b
+    falada d = b + a
+
+    fala(c)
+    fala(d)
+
+}
+
+Teste 2 - String stdin
+
+nmr principal() {
+    falada T
+    falada D
+
+    fala("Entre com a primeira string")
+    ouve(T)
+
+    fala("Entre com a segunda")
+    ouve(D)
+
+    fala(T+D)
+    
+}
+
+Teste 3 - Vetores
+
+nmr principal() {
+
+    nmr vet[10]    
+    vet[3] = 1
+    fala(vet[3])
+}
+Teste 4 - Matrizes
+Teste 5 - Inicializações
+Teste 6 - Controle de laço
+Teste 7 - Subprograma
+Teste 8 - Unário
+Teste 9 - Composto
+Teste 10 - Extra

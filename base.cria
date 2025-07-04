@@ -1,0 +1,6 @@
+nmr principal() {
+
+    nmr vet[10]    
+    vet[3] = 1
+    fala(vet[3])
+}
