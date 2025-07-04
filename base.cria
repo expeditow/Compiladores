@@ -1,5 +1,6 @@
 nmr principal() {
-    nmr x = 0
-    x += 5
-    fala(x)
+    falada teste1 = "ola"
+    falada teste2 = "tudo bem?"
+    falada teste3 = teste1 + teste2
+    fala(teste3)
 }

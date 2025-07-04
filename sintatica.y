@@ -3,66 +3,86 @@
 #include <string>
 #include <sstream>
 #include <bits/stdc++.h>
+#include <set> // Adicionado para o set de variáveis alocadas
 
 #define YYSTYPE atributos
 
 using namespace std;
 
+// Contadores globais
 int qntdVariaveisTemp = 0;
 int contador_rotulos = 0;
 
-stack<string> pilhaRotulosFimLoop;      // Para 'break': salta para o fim do laço
-stack<string> pilhaRotulosProxIteracao; // Para 'continue': salta para o teste/incremento do laço
-// Estrutura para guardar informações da função
+// Constante para o buffer do scan
+#define SCAN_BUFFER_SIZE 1024
+
+// Pilhas para controle de laços (break/continue)
+stack<string> pilhaRotulosFimLoop;
+stack<string> pilhaRotulosProxIteracao;
+
+// --- LÓGICA DE STRINGS (DO SEGUNDO CÓDIGO) ---
+// Conjunto para rastrear labels de strings que foram alocadas com malloc e precisam de free()
+set<string> variaveisAlocadas;
+
+// Estrutura para guardar informações da função (do primeiro código)
 struct TIPO_FUNCAO {
     string tipoRetorno;
     vector<string> tiposParametros;
 };
 
-// A nova tabela de símbolos para funções
+// A tabela de símbolos para funções (do primeiro código)
 map<string, TIPO_FUNCAO> tabelaFuncoes;
+
+// Atributos para os nós da árvore sintática
+// O campo 'tamanho' foi adicionado, conforme o segundo código.
 struct atributos 
 {
-    string label;       // A variável temporária atribuída
-    string traducao;    // A tradução em código intermediário
-    string tipo;        // O tipo, p casos de operações que precisamos criar uma nova label
+    string label;
+    string traducao;
+    string tipo;
+    int tamanho; // Campo adicionado do segundo código
 };
 
+// Estrutura para os símbolos na tabela
 typedef struct
 {
     string nomeVariavel; // nome no código fonte
-    string tipoVariavel;  // int, float, double
-    string label; // tipo registrador
+    string tipoVariavel; // int, float, double
+    string label; // nome no código intermediário (ex: T1, T2)
 
-    bool isArray = false; // Indica se é uma matriz
-    int arraySize = 0;         // tamanho primeira dimensão
-    int arraySize2 = 0;        // tamanho segunda dimensão (nova)
-     bool isParam = false; // <-- ADICIONE ESTE CAMPO
+    bool isArray = false;
+    int arraySize = 0;
+    int arraySize2 = 0;
+    bool isParam = false; // Campo do primeiro código para diferenciar parâmetros
 
- int getTamanhoTotal() const {
+   int getTamanhoTotal() const {
         return arraySize * (arraySize2 > 0 ? arraySize2 : 1);
     }
 
 } TIPO_SIMBOLO;
 
+// Protótipos de funções
 int yylex(void);
 void yyerror(string);
 
+// Variáveis e estruturas de dados do compilador
 set<pair<string,string>> temporarias;
 vector<map<string, TIPO_SIMBOLO>> pilhaTabelasSimbolos;
 stack<pair<string, string>> pilhaExprSwitch;
 
+// Funções de manipulação da Tabela de Símbolos
 bool verificaTabelaSimbolos(string nome);
 TIPO_SIMBOLO pegaVariavelTabelaSimbolos(string nome);
 void printTabelaSimbolos();
 void entraEscopo();
 void saiEscopo();
 
-void insereFixasTabelaSimbolos(string nome, string tipo,bool ehArray = false, int tamanhoArray = 0,int tamanhoArray2 = 0,bool ehParam = false);
+// Funções para inserir na Tabela de Símbolos
+void insereFixasTabelaSimbolos(string nome, string tipo, bool ehArray = false, int tamanhoArray = 0, int tamanhoArray2 = 0, bool ehParam = false);
 string insereTemporariasTabelaSimbolos(string nome, string tipo);
 
+// Funções auxiliares de geração de código
 string novo_rotulo();
-
 string geraNomeTemp(string tipo);
 string pegaTipo(string tipo);
 string infereTipo(string tipo1, string tipo2);
@@ -77,16 +97,16 @@ extern int yylinha;
 
 %}
 
-%token TK_TIPO TK_ID TK_RETURN   // número/nome
-%token TK_INT TK_FLOAT TK_BOOLEAN TK_CHAR TK_STRING// tipos
-%token TK_MAIOR_IGUAL TK_MENOR_IGUAL TK_DIFERENTE TK_IGUAL TK_E_LOGICO TK_OU_LOGICO TK_NEGACAO // operadores
-%token TK_IF TK_ELSE TK_WHILE TK_DO TK_FOR TK_IN TK_SWITCH TK_CASE TK_BREAK TK_DEFAULT TK_CONTINUE// condicionais
+// Definição dos Tokens
+%token TK_TIPO TK_ID TK_RETURN
+%token TK_INT TK_FLOAT TK_BOOLEAN TK_CHAR TK_STRING
+%token TK_MAIOR_IGUAL TK_MENOR_IGUAL TK_DIFERENTE TK_IGUAL TK_E_LOGICO TK_OU_LOGICO TK_NEGACAO
+%token TK_IF TK_ELSE TK_WHILE TK_DO TK_FOR TK_IN TK_SWITCH TK_CASE TK_BREAK TK_DEFAULT TK_CONTINUE
 %token TK_INCREMENTO TK_DECREMENTO TK_MAIS_IGUAL TK_MENOS_IGUAL TK_MULT_IGUAL TK_DIV_IGUAL
 %token TK_PRINT TK_SCAN
-%token FIM_LINHA    // linha
+%token FIM_LINHA
 
 %start START
-
 
 %%
 
@@ -95,9 +115,11 @@ START
     {
         if(debug) cout << "[DEBUG] Árvore completa gerada. Tradução:\n";
 
-        string defines = "\n\t#define true 1\n\t#define false 0\n\n\n";
-        string declaracoes = "";
+        // Cabeçalhos C padrão
+        string cabecalho = "#include <stdio.h>\n#include <stdlib.h>\n#include <string.h>\n\n";
+        string defines = "#define true 1\n#define false 0\n\n";
 
+        // Função auxiliar para calcular o tamanho de strings em tempo de execução
         string funcao_meu_strlen = "int meu_strlen(char* v0) {\n"
             "\tint v1;\n"
             "\tint t1;\n\tint t2;\n\tint t3;\n\tint t4;\n\tint t5;\n\tint t7;\n\tint t8;\n\tint t9;\n\tint t10;\n\tint t11;\n"
@@ -124,34 +146,35 @@ START
             "\tt11 = v1;\n"
             "\treturn t11;\n"
             "}\n\n";
-
+        
+        // Geração das declarações de variáveis (globais e temporárias)
+        string declaracoes = "";
         for (auto i : temporarias) {
             string label = i.first;
             string tipo = i.second;
-
             bool declarada = false;
 
+            // Lógica para evitar redeclaração (mantida do código original)
             if (!pilhaTabelasSimbolos.empty()) {
                 for (const auto& par : pilhaTabelasSimbolos.back()) {
                     const TIPO_SIMBOLO& simbolo = par.second;
-
                     if (simbolo.label == label) {
-                        // Encontrou variável fixa associada
                         if (simbolo.isArray) {
                             int tamanho = simbolo.getTamanhoTotal();
-
-                            if (simbolo.tipoVariavel == "string" || simbolo.tipoVariavel == "char_array") {
-                                declaracoes += "\tchar " + simbolo.label + "[" + to_string(tamanho) + "];\n";
+                            // Para arrays, a declaração é feita como um bloco contíguo
+                            if (simbolo.tipoVariavel == "string") {
+                                // Um array de strings seria um char** ou similar, mas aqui tratamos como array de char
+                                 declaracoes += "\tchar " + simbolo.label + "[" + to_string(tamanho) + "];\n";
                             } else {
-                                declaracoes += "\t" + simbolo.tipoVariavel + " " + simbolo.label + "[" + to_string(tamanho) + "];\n";
+                                 declaracoes += "\t" + simbolo.tipoVariavel + " " + simbolo.label + "[" + to_string(tamanho) + "];\n";
                             }
                         } else {
-                            if (simbolo.tipoVariavel == "string" || simbolo.tipoVariavel == "char_array")
-                                declaracoes += "\tchar* " + simbolo.label + ";\n";
+                            // Ponteiros de string inicializados com NULL
+                            if (simbolo.tipoVariavel == "string")
+                                declaracoes += "\tchar* " + simbolo.label + " = NULL;\n";
                             else
                                 declaracoes += "\t" + simbolo.tipoVariavel + " " + simbolo.label + ";\n";
                         }
-
                         declarada = true;
                         break;
                     }
@@ -160,67 +183,84 @@ START
 
             if (!declarada) {
                 if (tipo == "string" || tipo == "char_array")
-                    declaracoes += "\tchar* " + label + ";\n";
+                    declaracoes += "\tchar* " + label + " = NULL;\n";
                 else
-                    declaracoes += "\t" + tipo + " " + label + ";\n ";
+                    declaracoes += "\t" + tipo + " " + label + ";\n";
             }
         }
 
-        cout << defines << funcao_meu_strlen << declaracoes << "\n" << $2.traducao << endl;
+        // Montagem do código final
+        cout << cabecalho << defines << funcao_meu_strlen << declaracoes << "\n" << $2.traducao << endl;
         saiEscopo();
     } |
 ;
+
 LISTA_FUNCOES
     : LISTA_FUNCOES FUNCAO
         { $$.traducao = $1.traducao + "\n" + $2.traducao; }
     | LISTA_FUNCOES FIM_LINHA
-        { $$ = $1; } // Ignora a quebra de linha, mantendo a tradução atual
+        { $$ = $1; }
     | /* Vazio */ 
         { $$.traducao = ""; }
 ;
+
 FUNCAO
     : TK_TIPO TK_ID '(' PARAMS ')' { entraEscopo(); } BLOCO { saiEscopo(); }
     {
         string tipoRetorno = pegaTipo($1.label);
         string nome = $2.label;
+        string corpoFuncao = $7.traducao;
 
         if (nome == "principal")
-            nome = "main"; // traduz principal() → main()
-        // -----  👇 CÓDIGO NOVO AQUI 👇 -----
+            nome = "main";
+
         if (tabelaFuncoes.count(nome)) {
             yyerror("Função '" + nome + "' já foi declarada.");
         } else {
             TIPO_FUNCAO infoFunc;
             infoFunc.tipoRetorno = tipoRetorno;
-            // OBS: A regra PARAMS precisaria ser modificada para
-            // preencher os tipos dos parâmetros. Por enquanto, deixaremos vazio.
             tabelaFuncoes[nome] = infoFunc;
             if(debug) cout << "[DEBUG] Função '" << nome << "' inserida na tabela de funções.\n";
         }
-        // -----  fim do código novo -----
+        
+        // Se esta é a função main, injeta o código para liberar a memória alocada
+        if (nome == "main") {
+            string frees = "";
+            if (!variaveisAlocadas.empty()) {
+                frees += "\n\t// Liberando memória alocada para strings\n";
+                for (const auto& varLabel : variaveisAlocadas) {
+                    frees += "\tfree(" + varLabel + ");\n";
+                }
+            }
+            // Insere os frees antes do final do bloco da função
+            corpoFuncao += frees;
+        }
 
-        $$.traducao = tipoRetorno + " " + nome + "(" + $4.traducao + ") {\n" + $7.traducao + "}\n";
+        $$.traducao = tipoRetorno + " " + nome + "(" + $4.traducao + ") {\n" + corpoFuncao + "}\n";
     }
 ;
+
 PARAMS
     : PARAM ',' PARAMS
         { $$.traducao = $1.traducao + ", " + $3.traducao; }
     | PARAM
-        { $$.traducao = $1.traducao; }
+        { $$ = $1; }
     | /* vazio */
         { $$.traducao = ""; }
 ;
+
 PARAM
     : TK_TIPO TK_ID
     {
         string tipo = pegaTipo($1.label);
-        // Agora passamos 'true' para o último argumento, marcando como parâmetro
+        // Passa 'true' para o último argumento, marcando como parâmetro
         insereFixasTabelaSimbolos($2.label, $1.label, false, 0, 0, true); 
 
         $$.traducao = tipo + " " + $2.label;
     }
 ;
-CODIGO      :  ITEM CODIGO
+
+CODIGO      :   ITEM CODIGO
             {
                 $$.traducao = $1.traducao + $2.traducao;
             }
@@ -250,7 +290,6 @@ BLOCO_DECL  : TK_TIPO TK_ID '{' { entraEscopo(); } CMDS '}' FIM_LINHA
             }
             | TK_TIPO TK_ID '{' { entraEscopo(); } CMDS '}' // p ele pegar último bloco caso não tenha espaço
             {
-
                 $$.tipo = pegaTipo($1.label);
                 $$.traducao =  $$.tipo + " " + $2.label + "(){\n" + $5.traducao + "}\n";
                 printTabelaSimbolos();
@@ -288,223 +327,182 @@ CMD         : EXP FIM_LINHA  { $$.traducao = $1.traducao; }
             | ATR            { $$.traducao = $1.traducao; }
             | ATR FIM_LINHA  { $$.traducao = $1.traducao; }
             | EXP            { $$.traducao = $1.traducao; }
-            | FIM_LINHA      { $$.traducao = "";          }
+            | FIM_LINHA      { $$.traducao = "";           }
             | TK_IF '(' EXP ')' BLOCO
             {
-                // Rótulo para o final do 'if'
                 string rotuloFimIf = novo_rotulo();
-
-                // 1. Variável para receber a CÓPIA do resultado da condição (o seu T6)
                 string temp_copia = insereTemporariasTabelaSimbolos("", "bool");
-
-                // 2. Variável para receber a NEGAÇÃO da cópia (o seu T7)
                 string temp_negada = insereTemporariasTabelaSimbolos("", "bool");
 
-                // 3. Monta a tradução para gerar o código EXATO que você quer:
-                $$.traducao = $3.traducao +      // Gera: T4 = T2 >= T3;  ($3.label é T4)
-                            
-                            // Gera a cópia: T6 = T4
-                            "\t" + temp_copia + " = " + $3.label + ";\n" +
-                            
-                            // Gera a negação explícita: T7 = !T6
-                            "\t" + temp_negada + " = !" + temp_copia + ";\n" +
-                            
-                            // Gera o desvio condicional: if (T7) goto L0;
-                            "\tif (" + temp_negada + ") goto " + rotuloFimIf + ";\n" +
-                            
-                            $5.traducao +          // Corpo do 'if'
-                            rotuloFimIf + ":\n";     // Rótulo de saída
+                $$.traducao = $3.traducao +
+                                 "\t" + temp_copia + " = " + $3.label + ";\n" +
+                                 "\t" + temp_negada + " = !" + temp_copia + ";\n" +
+                                 "\tif (" + temp_negada + ") goto " + rotuloFimIf + ";\n" +
+                                 $5.traducao +
+                                 rotuloFimIf + ":\n";
             }
             | TK_IF '(' EXP ')' BLOCO TK_ELSE BLOCO
             {
                 string rotuloElse = novo_rotulo();
                 string rotuloFimIfElse = novo_rotulo();
-
                 string temp_copia = insereTemporariasTabelaSimbolos("", "bool");
                 string temp_negada = insereTemporariasTabelaSimbolos("", "bool");
 
                 $$.traducao = $3.traducao + 
-                            
-                            "\t" + temp_copia + " = " + $3.label + ";\n" +
-                            "\t" + temp_negada + " = !" + temp_copia + ";\n" +
-                            "\tif (" + temp_negada + ") goto " + rotuloElse + ";\n" +
-                            $5.traducao +
-                            "\tgoto " + rotuloFimIfElse + ";\n" +
-                            rotuloElse + ":\n" + 
-                            $7.traducao +
-                            rotuloFimIfElse + ":\n";
+                                 "\t" + temp_copia + " = " + $3.label + ";\n" +
+                                 "\t" + temp_negada + " = !" + temp_copia + ";\n" +
+                                 "\tif (" + temp_negada + ") goto " + rotuloElse + ";\n" +
+                                 $5.traducao +
+                                 "\tgoto " + rotuloFimIfElse + ";\n" +
+                                 rotuloElse + ":\n" + 
+                                 $7.traducao +
+                                 rotuloFimIfElse + ":\n";
             }
-            | TK_WHILE '(' EXP ')'
-            /* preciso disso em tempo de execução, senão ele desce na árvoree n tem nada na pilha*/
-            {
+            | TK_WHILE '(' EXP ')' { /* Ação em tempo de redução */
                 string rotuloTeste = novo_rotulo();
                 string rotuloFimWhile = novo_rotulo();
-
                 pilhaRotulosProxIteracao.push(rotuloTeste);
                 pilhaRotulosFimLoop.push(rotuloFimWhile); 
-
             }
             BLOCO
             {
-
-                string rotuloTeste = pilhaRotulosProxIteracao.top(); // Rotulo para o continue
-                string rotuloFimWhile = pilhaRotulosFimLoop.top();   // Rotulo para o break
+                string rotuloTeste = pilhaRotulosProxIteracao.top();
+                string rotuloFimWhile = pilhaRotulosFimLoop.top();
 
                 $$.traducao = rotuloTeste + ":\n" +
-                            $3.traducao + // Exp do While
-                            "\tif (!" + $3.label + ") goto " + rotuloFimWhile + ";\n" +
-                            $6.traducao +
-                            "\tgoto " + rotuloTeste + ";\n" +
-                            rotuloFimWhile + ":\n";
+                                 $3.traducao +
+                                 "\tif (!" + $3.label + ") goto " + rotuloFimWhile + ";\n" +
+                                 $6.traducao +
+                                 "\tgoto " + rotuloTeste + ";\n" +
+                                 rotuloFimWhile + ":\n";
 
-                // Agora, desempilha.
                 pilhaRotulosProxIteracao.pop();
                 pilhaRotulosFimLoop.pop();
             }
-            | TK_DO
-              {
-                  // Rótulos que serão o destino do break e continue
-                  string rotuloTeste = novo_rotulo();         // Destino do continue
-                  string rotuloFimDoWhile = novo_rotulo();    // Destino do break
-
-                  pilhaRotulosProxIteracao.push(rotuloTeste);
-                  pilhaRotulosFimLoop.push(rotuloFimDoWhile);
-              }
-              BLOCO TK_WHILE '(' EXP ')' FIM_LINHA
+            | TK_DO {
+                string rotuloTeste = novo_rotulo();
+                string rotuloFimDoWhile = novo_rotulo();
+                pilhaRotulosProxIteracao.push(rotuloTeste);
+                pilhaRotulosFimLoop.push(rotuloFimDoWhile);
+            }
+            BLOCO TK_WHILE '(' EXP ')' FIM_LINHA
             {
-
                 string rotuloTeste = pilhaRotulosProxIteracao.top();
                 string rotuloFimDoWhile = pilhaRotulosFimLoop.top();
-
                 string rotuloCorpo = novo_rotulo();
 
-                $$.traducao = rotuloCorpo + ":\n" +      
-                              $3.traducao +             
-                              rotuloTeste + ":\n" +     
-                              $6.traducao +             
-                              "\tif (" + $6.label + ") goto " + rotuloCorpo + ";\n" + 
-                              rotuloFimDoWhile + ":\n";
-
-                // Desempilha os rótulos.
-                pilhaRotulosProxIteracao.pop();
-                pilhaRotulosFimLoop.pop();
-            }
-            | BLOCO TK_WHILE '(' EXP ')' FIM_LINHA
-            {
-                string rotuloTeste = pilhaRotulosProxIteracao.top();
-                string rotuloFimDoWhile = pilhaRotulosFimLoop.top();
-
-                string rotuloCorpo = novo_rotulo(); 
-
-                $$.traducao = rotuloCorpo + ":\n" +    
-                              $3.traducao +          
-                              rotuloTeste + ":\n" +    
-                              $6.traducao +           
-                              "\tif (" + $6.label + ") goto " + rotuloCorpo + ";\n" + 
-                              rotuloFimDoWhile + ":\n"; 
+                $$.traducao = rotuloCorpo + ":\n" +
+                                 $3.traducao +
+                                 rotuloTeste + ":\n" +
+                                 $6.traducao +
+                                 "\tif (" + $6.label + ") goto " + rotuloCorpo + ";\n" + 
+                                 rotuloFimDoWhile + ":\n";
 
                 pilhaRotulosProxIteracao.pop();
                 pilhaRotulosFimLoop.pop();
             }
-            | TK_FOR '(' FOR_INICIA ';' EXP ';' FOR_INCREM ')'
-            {
-                  string rotuloIncremento = novo_rotulo();
-                  string rotuloFimFor = novo_rotulo();
-
-                  pilhaRotulosProxIteracao.push(rotuloIncremento);
-                  pilhaRotulosFimLoop.push(rotuloFimFor);
-
+            | TK_FOR '(' FOR_INICIA ';' EXP ';' FOR_INCREM ')' {
+                string rotuloIncremento = novo_rotulo();
+                string rotuloFimFor = novo_rotulo();
+                pilhaRotulosProxIteracao.push(rotuloIncremento);
+                pilhaRotulosFimLoop.push(rotuloFimFor);
             }
             BLOCO 
             {
-
                 string rotuloIncrementoReal = pilhaRotulosProxIteracao.top();
                 string rotuloFimForReal = pilhaRotulosFimLoop.top();
-
                 string rotuloTesteReal = novo_rotulo();
 
-                $$.traducao = $3.traducao;               
-                $$.traducao += rotuloTesteReal + ":\n";  
-                $$.traducao += $5.traducao;              
+                $$.traducao = $3.traducao;
+                $$.traducao += rotuloTesteReal + ":\n";
+                $$.traducao += $5.traducao;
                 $$.traducao += "\tif (!" + $5.label + ") goto " + rotuloFimForReal + ";\n"; 
-                $$.traducao += $10.traducao;             
+                $$.traducao += $10.traducao;
                 $$.traducao += rotuloIncrementoReal + ":\n"; 
-                $$.traducao += $7.traducao;             
+                $$.traducao += $7.traducao;
                 $$.traducao += "\tgoto " + rotuloTesteReal + ";\n"; 
-                $$.traducao += rotuloFimForReal + ":\n";      
+                $$.traducao += rotuloFimForReal + ":\n";
 
                 pilhaRotulosProxIteracao.pop();
                 pilhaRotulosFimLoop.pop();
-
             }
             | TK_BREAK FIM_LINHA
             {
                 if (pilhaRotulosFimLoop.empty()) {
-                    yyerror("Erro semântico: 'pare' (break) fora de um laço.");
+                    yyerror("Erro semântico: 'break' fora de um laço.");
                 }
                 $$.traducao = "\tgoto " + pilhaRotulosFimLoop.top() + ";\n";
             }
             | TK_CONTINUE FIM_LINHA
             {
                 if (pilhaRotulosProxIteracao.empty()) {
-                    yyerror("Erro semântico: 'passa' (continue) fora de um laço.");
+                    yyerror("Erro semântico: 'continue' fora de um laço.");
                 }
                 $$.traducao = "\tgoto " + pilhaRotulosProxIteracao.top() + ";\n";
             }
+            // --- REGRA DE PRINT ATUALIZADA COM A LÓGICA DO SEGUNDO CÓDIGO ---
             | TK_PRINT '(' EXP ')' FIM_LINHA
             {
-                string formato = "";
-                if ($3.tipo == "int") {
-                    formato = "%d";
-                } else if ($3.tipo == "float") {
-                    formato = "%f";
-                } else if ($3.tipo == "char") {
-                    formato = "%c";
-                } else if ($3.tipo == "bool") { 
-                    formato = "%d";
-                } else { // adicionar o 
-                    yyerror("Tipo inválido para 'fala' (print): " + $3.tipo);
-                }
+                if ($3.tipo == "string_literal") {
+                    // Lógica do segundo código: aloca, imprime e libera imediatamente.
+                    string temp_print_str = insereTemporariasTabelaSimbolos("", "string");
+                    int tamanho = tamanho_string($3.label); // Usa a função substituída
 
-                $$.traducao = $3.traducao + "\tprintf(\"" + formato + "\\n\", " + $3.label + ");\n";
+                    stringstream ss;
+                    ss << "\t" << temp_print_str << " = (char*) malloc(" << tamanho << ");\n";
+                    ss << "\tstrcpy(" << temp_print_str << ", " << $3.label << ");\n";
+                    ss << "\tprintf(\"%s\\n\", " << temp_print_str << ");\n";
+                    ss << "\tfree(" << temp_print_str << ");\n"; // Liberação imediata
+                    $$.traducao = ss.str();
+
+                } else {
+                    // Lógica original para outras variáveis (números, char, variáveis string)
+                    string formato = "";
+                    string tipoVar = pegaTipo($3.tipo);
+                    
+                    if (tipoVar == "int") formato = "%d";
+                    else if (tipoVar == "float") formato = "%f";
+                    else if (tipoVar == "char") formato = "%c";
+                    else if (tipoVar == "bool") formato = "%d";
+                    else if (tipoVar == "string") formato = "%s";
+                    else {
+                        yyerror("Tipo inválido para 'print': " + $3.tipo);
+                    }
+                    
+                    $$.traducao = $3.traducao + "\tprintf(\"" + formato + "\\n\", " + $3.label + ");\n";
+                }
             }
+            // --- REGRA DE SCAN (LÓGICA IDÊNTICA EM AMBOS OS CÓDIGOS) ---
             | TK_SCAN '(' TK_ID ')' FIM_LINHA
             {
-
-                   TIPO_SIMBOLO varSimbolo;
+                TIPO_SIMBOLO varSimbolo;
                 if (!verificaTabelaSimbolos($3.label)) {
-                    yyerror("Variável '" + $3.label + "' não declarada para 'ouve' (scan).");
+                    yyerror("Variável '" + $3.label + "' não declarada para 'scan'.");
                 } else {
                     varSimbolo = pegaVariavelTabelaSimbolos($3.label);
                 }
 
-                string tempLer = insereTemporariasTabelaSimbolos("", varSimbolo.tipoVariavel);
-
-                string formato = "";
-                if (varSimbolo.tipoVariavel == "int") {
-                    formato = "%d";
-                } else if (varSimbolo.tipoVariavel == "float") {
-                    formato = "%f";
-                } else if (varSimbolo.tipoVariavel == "char") {
-                    formato = " %c";
-                } else if (varSimbolo.tipoVariavel == "bool") {
-                    formato = "%d"; 
+                if (varSimbolo.tipoVariavel == "string") {
+                    stringstream ss;
+                    ss << "\tfree(" << varSimbolo.label << "); // Libera string antiga antes de ler uma nova\n";
+                    ss << "\t" << varSimbolo.label << " = (char*) malloc(" << SCAN_BUFFER_SIZE << ");\n";
+                    ss << "\tscanf(\"%s\", " << varSimbolo.label << ");\n";
+                    
+                    variaveisAlocadas.insert(varSimbolo.label);
+                    $$.traducao = ss.str();
                 } else {
-                    yyerror("Tipo inválido para 'ouve' (scan): " + varSimbolo.tipoVariavel);
+                    string formato = (varSimbolo.tipoVariavel == "int" || varSimbolo.tipoVariavel == "bool") ? "%d" :
+                                     (varSimbolo.tipoVariavel == "float") ? "%f" : " %c";
+                    string argumentoScan = "&" + varSimbolo.label;
+                    
+                    $$.traducao = "\tscanf(\"" + formato + "\", " + argumentoScan + ");\n";
                 }
-
-                string traducaoLeitura = "\tscanf(\"" + formato + "\", &" + tempLer + ");\n";
-                string traducaoAtr = "\t" + varSimbolo.label + " = " + tempLer + ";\n";
-
-                $$.traducao = traducaoLeitura + traducaoAtr;
             }
-             | TK_RETURN EXP FIM_LINHA // Adicione FIM_LINHA se for o padrão
+            | TK_RETURN EXP FIM_LINHA
             {
-                // A tradução da expressão (ex: a + b) já vem em $2.traducao
-                // O resultado final da expressão está em $2.label
                 $$.traducao = $2.traducao + "\treturn " + $2.label + ";\n";
             }
-             | TK_RETURN EXP // Caso o ; seja opcional ou tratado como FIM_LINHA
+            | TK_RETURN EXP
             {
                 $$.traducao = $2.traducao + "\treturn " + $2.label + ";\n";
             }
@@ -515,119 +513,122 @@ FOR_INICIA  : DECL { $$.traducao = $1.traducao; }
             | ATR { $$.traducao = $1.traducao; }
             | { $$.traducao = ""; }
             ;
-FOR_INCREM  : ATR
-            { $$.traducao = $1.traducao; }
-            | EXP // Uma expressão que pode ter um efeito colateral, como i++
-            { $$.traducao = $1.traducao; }
-            | // vazio (permite 'for (init; cond; )')
-            { $$.traducao = ""; }
+FOR_INCREM  : ATR { $$.traducao = $1.traducao; }
+            | EXP { $$.traducao = $1.traducao; }
+            | { $$.traducao = ""; }
             ;
 
 
 DECL        : TK_TIPO TK_ID 
             {
-               if($1.label == "falada") {
-            insereFixasTabelaSimbolos($2.label, "string");  // registra tipo string na tabela
-        } else {
-            insereFixasTabelaSimbolos($2.label, $1.label);
-        }
-        $$.traducao = ""; // declaração será feita no final no start
+                insereFixasTabelaSimbolos($2.label, $1.label);
+                $$.traducao = ""; // A declaração real ocorre no início do código C
             }
+            // --- REGRA DE DECLARAÇÃO COM INICIALIZAÇÃO (LÓGICA IDÊNTICA EM AMBOS) ---
             | TK_TIPO TK_ID '=' EXP
             {
                 insereFixasTabelaSimbolos($2.label, $1.label);
-
                 TIPO_SIMBOLO varSimbolo = pegaVariavelTabelaSimbolos($2.label);
 
-                if (varSimbolo.tipoVariavel != pegaTipo($4.tipo)) {
-                    yyerror("Variável '" + $2.label + "' não suporta valor atribuído.");
+                string tipoExp = pegaTipo($4.tipo);
+                // Tipo de checagem do segundo código (sem char_array)
+                if (varSimbolo.tipoVariavel != tipoExp && varSimbolo.tipoVariavel != "string" && $4.tipo != "string_literal") {
+                    yyerror("Tipo incompatível na declaração de '" + $2.label + "'.");
                 }
-
+                
                 if (varSimbolo.tipoVariavel == "string") {
-                    // inicialização de string com strcpy
-                    $$.traducao = $4.traducao + "\tstrcpy(" + varSimbolo.label + ", " + $4.label + ");\n";
+                    string temp_tamanho = insereTemporariasTabelaSimbolos("", "int");
+                    stringstream ss;
+
+                    if ($4.tipo == "string_literal") {
+                        int tamanho = tamanho_string($4.label);
+                        ss << "\t" << temp_tamanho << " = " << tamanho << ";\n";
+                        ss << "\t" << varSimbolo.label << " = (char*) malloc(" << temp_tamanho << ");\n";
+                        ss << "\tstrcpy(" << varSimbolo.label << ", " << $4.traducao << ");\n";
+                    } else { // O lado direito é uma variável string
+                        ss << $4.traducao;
+                        ss << "\t" << temp_tamanho << " = meu_strlen(" << $4.label << ") + 1;\n";
+                        ss << "\t" << varSimbolo.label << " = (char*) malloc(" << temp_tamanho << ");\n";
+                        ss << "\tstrcpy(" << varSimbolo.label << ", " << $4.label << ");\n";
+                    }
+                    $$.traducao = ss.str();
+                    variaveisAlocadas.insert(varSimbolo.label);
                 } else {
                     $$.traducao = $4.traducao + "\t" + varSimbolo.label + " = " + $4.label + ";\n";
                 }
             }
             | TK_TIPO TK_ID '[' TK_INT ']' '[' TK_INT ']'
-    {
-        string tipo = pegaTipo($1.label);
-        int tamanho1 = stoi($4.label);
-        int tamanho2 = stoi($7.label);
-
-        if (tipo == "string" || $1.label == "falada") {
-            insereFixasTabelaSimbolos($2.label, "string", true, tamanho1, tamanho2);
-        } else {
-            insereFixasTabelaSimbolos($2.label, $1.label, true, tamanho1, tamanho2);
-        }
-        $$.traducao = "";
-    }
-    | TK_TIPO TK_ID '[' TK_INT ']'           // vetor 1D
-    {
-        string tipo = pegaTipo($1.label);
-        int tamanho = stoi($4.label);
-
-        if (tipo == "string" || $1.label == "falada") {
-            insereFixasTabelaSimbolos($2.label, "string", true, tamanho);
-        } else {
-            insereFixasTabelaSimbolos($2.label, $1.label, true, tamanho);
-        }
-        $$.traducao = "";
-    }
+            {
+                string tipo = pegaTipo($1.label);
+                int tamanho1 = stoi($4.label);
+                int tamanho2 = stoi($7.label);
+                insereFixasTabelaSimbolos($2.label, $1.label, true, tamanho1, tamanho2);
+                $$.traducao = "";
+            }
+            | TK_TIPO TK_ID '[' TK_INT ']'
+            {
+                string tipo = pegaTipo($1.label);
+                int tamanho = stoi($4.label);
+                insereFixasTabelaSimbolos($2.label, $1.label, true, tamanho);
+                $$.traducao = "";
+            }
             ;
 
 ATR         : TK_ID '=' EXP
             {
+                TIPO_SIMBOLO varEsquerda = pegaVariavelTabelaSimbolos($1.label);
+                string tipoExp = pegaTipo($3.tipo);
 
-                TIPO_SIMBOLO temp;
-
-                if(!verificaTabelaSimbolos($1.label))
-                    yyerror("Não foi declarado essa variável");
-                else
-                    temp = pegaVariavelTabelaSimbolos(($1.label));
-
-                if(debug) cout << "[DEBUG] Atribuição: " << $1.label << " = " << $3.label 
-                << "\n  Tipos: " << temp.tipoVariavel << " <- " << $3.tipo << endl;
-
-                if(temp.tipoVariavel != pegaTipo($3.tipo))
-                    yyerror("Variavel nao suporta valor atribuido");
-
-                $$.label = temp.label;
-                if (temp.tipoVariavel == "string") {
-                    $$.traducao = $3.traducao + "\tstrcpy(" + temp.label + ", " + $3.label + ");\n";
-                } else {
-                    $$.traducao = $3.traducao + "\t" + temp.label + " = " + $3.label + ";\n";
+                // Tipo de checagem do segundo código (sem char_array)
+                if (varEsquerda.tipoVariavel != tipoExp && varEsquerda.tipoVariavel != "string" && $3.tipo != "string_literal") {
+                    yyerror("Tipo incompatível na atribuição para '" + $1.label + "'.");
                 }
 
+                $$.label = varEsquerda.label;
+
+                // --- LÓGICA DE ATRIBUIÇÃO DE STRING (IDÊNTICA EM AMBOS) ---
+                if (varEsquerda.tipoVariavel == "string") {
+                    string temp_tamanho = insereTemporariasTabelaSimbolos("", "int");
+                    stringstream ss;
+
+                    ss << "\tfree(" << varEsquerda.label << "); // Libera string antiga antes de nova atribuição\n";
+
+                    if ($3.tipo == "string_literal") {
+                        int tamanho = tamanho_string($3.label);
+                        ss << "\t" << temp_tamanho << " = " << tamanho << ";\n";
+                        ss << "\t" << varEsquerda.label << " = (char*) malloc(" << temp_tamanho << ");\n";
+                        ss << "\tstrcpy(" << varEsquerda.label << ", " << $3.traducao << ");\n";
+                    } else { // O lado direito é outra variável string
+                        ss << $3.traducao;
+                        ss << "\t" << temp_tamanho << " = meu_strlen(" << $3.label << ") + 1;\n";
+                        ss << "\t" << varEsquerda.label << " = (char*) malloc(" << temp_tamanho << ");\n";
+                        ss << "\tstrcpy(" << varEsquerda.label << ", " << $3.label << ");\n";
+                    }
+                    $$.traducao = ss.str();
+                    variaveisAlocadas.insert(varEsquerda.label); 
+                } else {
+                    $$.traducao = $3.traducao + "\t" + varEsquerda.label + " = " + $3.label + ";\n";
+                }
             }
             | TK_ID TK_MAIS_IGUAL EXP
             {
-               TIPO_SIMBOLO varEsquerda = pegaVariavelTabelaSimbolos($1.label);
-    
-                // Checagem de tipo
+                TIPO_SIMBOLO varEsquerda = pegaVariavelTabelaSimbolos($1.label);
                 string tipoResultado = infereTipo(varEsquerda.tipoVariavel, $3.tipo);
                 if (tipoResultado != varEsquerda.tipoVariavel && varEsquerda.tipoVariavel != "float") {
                     yyerror("Erro de tipo em '+=': Nao e possivel atribuir um " + tipoResultado + " a um " + varEsquerda.tipoVariavel);
                 }
 
-                // Criação das temporárias
                 string temp_valor_esq = insereTemporariasTabelaSimbolos("", varEsquerda.tipoVariavel);
                 string temp_resultado = insereTemporariasTabelaSimbolos("", tipoResultado);
-
                 stringstream ss;
-                // Primeiro, inclui o código da expressão da direita, se houver
                 ss << $3.traducao;
-                // Agora, os passos detalhados
-                ss << "\t" << temp_valor_esq << " = " << varEsquerda.label << ";\n";              // temp_valor_esq = x;
-                ss << "\t" << temp_resultado << " = " << temp_valor_esq << " + " << $3.label << ";\n"; // temp_resultado = temp_valor_esq + y;
-                ss << "\t" << varEsquerda.label << " = " << temp_resultado << ";\n";                // x = temp_resultado;
-
+                ss << "\t" << temp_valor_esq << " = " << varEsquerda.label << ";\n";
+                ss << "\t" << temp_resultado << " = " << temp_valor_esq << " + " << $3.label << ";\n";
+                ss << "\t" << varEsquerda.label << " = " << temp_resultado << ";\n";
                 $$.traducao = ss.str();
                 $$.label = varEsquerda.label;
                 $$.tipo = varEsquerda.tipoVariavel;
             }
-            // Regra para x -= y
             | TK_ID TK_MENOS_IGUAL EXP
             {
                 TIPO_SIMBOLO varEsquerda = pegaVariavelTabelaSimbolos($1.label);
@@ -636,19 +637,15 @@ ATR         : TK_ID '=' EXP
 
                 string temp_valor_esq = insereTemporariasTabelaSimbolos("", varEsquerda.tipoVariavel);
                 string temp_resultado = insereTemporariasTabelaSimbolos("", tipoResultado);
-
                 stringstream ss;
                 ss << $3.traducao;
                 ss << "\t" << temp_valor_esq << " = " << varEsquerda.label << ";\n";
                 ss << "\t" << temp_resultado << " = " << temp_valor_esq << " - " << $3.label << ";\n";
                 ss << "\t" << varEsquerda.label << " = " << temp_resultado << ";\n";
-
                 $$.traducao = ss.str();
                 $$.label = varEsquerda.label;
                 $$.tipo = varEsquerda.tipoVariavel;
             }
-
-            // Regra para x *= y
             | TK_ID TK_MULT_IGUAL EXP
             {
                 TIPO_SIMBOLO varEsquerda = pegaVariavelTabelaSimbolos($1.label);
@@ -657,236 +654,155 @@ ATR         : TK_ID '=' EXP
 
                 string temp_valor_esq = insereTemporariasTabelaSimbolos("", varEsquerda.tipoVariavel);
                 string temp_resultado = insereTemporariasTabelaSimbolos("", tipoResultado);
-
                 stringstream ss;
                 ss << $3.traducao;
                 ss << "\t" << temp_valor_esq << " = " << varEsquerda.label << ";\n";
                 ss << "\t" << temp_resultado << " = " << temp_valor_esq << " * " << $3.label << ";\n";
                 ss << "\t" << varEsquerda.label << " = " << temp_resultado << ";\n";
-
                 $$.traducao = ss.str();
                 $$.label = varEsquerda.label;
                 $$.tipo = varEsquerda.tipoVariavel;
             }
+            | TK_ID TK_DIV_IGUAL EXP
+            {
+                TIPO_SIMBOLO varEsquerda = pegaVariavelTabelaSimbolos($1.label);
+                string tipoResultado = infereTipo(varEsquerda.tipoVariavel, $3.tipo);
+                if (tipoResultado != varEsquerda.tipoVariavel && varEsquerda.tipoVariavel != "float") { yyerror("Erro de tipo em '/='."); }
 
-            // Regra para x /= y
-        | TK_ID TK_DIV_IGUAL EXP
-        {
-            TIPO_SIMBOLO varEsquerda = pegaVariavelTabelaSimbolos($1.label);
-            string tipoResultado = infereTipo(varEsquerda.tipoVariavel, $3.tipo);
-            if (tipoResultado != varEsquerda.tipoVariavel && varEsquerda.tipoVariavel != "float") { yyerror("Erro de tipo em '/='."); }
-
-            string temp_valor_esq = insereTemporariasTabelaSimbolos("", varEsquerda.tipoVariavel);
-            string temp_resultado = insereTemporariasTabelaSimbolos("", tipoResultado);
-
-            stringstream ss;
-            ss << $3.traducao;
-            ss << "\t" << temp_valor_esq << " = " << varEsquerda.label << ";\n";
-            ss << "\t" << temp_resultado << " = " << temp_valor_esq << " / " << $3.label << ";\n";
-            ss << "\t" << varEsquerda.label << " = " << temp_resultado << ";\n";
-
-            $$.traducao = ss.str();
-            $$.label = varEsquerda.label;
-            $$.tipo = varEsquerda.tipoVariavel;
-        }
+                string temp_valor_esq = insereTemporariasTabelaSimbolos("", varEsquerda.tipoVariavel);
+                string temp_resultado = insereTemporariasTabelaSimbolos("", tipoResultado);
+                stringstream ss;
+                ss << $3.traducao;
+                ss << "\t" << temp_valor_esq << " = " << varEsquerda.label << ";\n";
+                ss << "\t" << temp_resultado << " = " << temp_valor_esq << " / " << $3.label << ";\n";
+                ss << "\t" << varEsquerda.label << " = " << temp_resultado << ";\n";
+                $$.traducao = ss.str();
+                $$.label = varEsquerda.label;
+                $$.tipo = varEsquerda.tipoVariavel;
+            }
             | TK_ID '[' EXP ']' '=' EXP
-    {
-        // 1) Verifica se variável existe
-        if (!verificaTabelaSimbolos($1.label))
-            yyerror("Variável '" + $1.label + "' não declarada para atribuição em índice.");
+            {
+                TIPO_SIMBOLO temp = pegaVariavelTabelaSimbolos($1.label);
+                if (!temp.isArray) yyerror("Variável '" + $1.label + "' não é um vetor.");
+                if ($3.tipo != "int") yyerror("Índice de vetor deve ser inteiro.");
+                if (temp.tipoVariavel != pegaTipo($6.tipo)) yyerror("Tipo incompatível ao atribuir em vetor.");
 
-        // 2) Recupera símbolo
-        TIPO_SIMBOLO temp = pegaVariavelTabelaSimbolos($1.label);
+                $$.label = temp.label;
+                $$.traducao = $3.traducao + $6.traducao + "\t" + temp.label + "[" + $3.label + "] = " + $6.label + ";\n";
+            }
+            | TK_ID '[' EXP ']' '[' EXP ']' '=' EXP
+            {
+                TIPO_SIMBOLO mat = pegaVariavelTabelaSimbolos($1.label);
+                if (!mat.isArray || mat.arraySize2 == 0) yyerror("'" + $1.label + "' não é matriz 2D.");
+                if ($3.tipo != "int" || $6.tipo != "int") yyerror("Índices de matriz devem ser inteiros.");
+                if (mat.tipoVariavel != pegaTipo($9.tipo)) yyerror("Tipo incompatível ao atribuir em matriz.");
+                
+                string tempMult = insereTemporariasTabelaSimbolos("temp", "int");
+                string tempIdx  = insereTemporariasTabelaSimbolos("temp", "int");
+                $$.traducao  = $3.traducao + $6.traducao +
+                                 "\t" + tempMult + " = " + $3.label + " * " + to_string(mat.arraySize2) + ";\n" +
+                                 "\t" + tempIdx  + " = " + tempMult + " + " + $6.label + ";\n" +
+                                 $9.traducao +
+                                 "\t" + mat.label + "[" + tempIdx + "] = " + $9.label + ";\n";
+            }
+            | TK_ID '=' TK_ID '[' EXP ']' '[' EXP ']'
+            {
+                TIPO_SIMBOLO mat = pegaVariavelTabelaSimbolos($3.label);
+                if (!mat.isArray || mat.arraySize2 == 0) yyerror("'" + $3.label + "' não é matriz 2D.");
+                TIPO_SIMBOLO destino = pegaVariavelTabelaSimbolos($1.label);
+                if (destino.tipoVariavel != mat.tipoVariavel) yyerror("Tipos incompatíveis.");
+                if ($5.tipo != "int" || $8.tipo != "int") yyerror("Índices da matriz devem ser inteiros.");
+                
+                string tempMult = insereTemporariasTabelaSimbolos("temp", "int");
+                string tempIdx  = insereTemporariasTabelaSimbolos("temp", "int");
+                $$.traducao  = $5.traducao + $8.traducao +
+                                 "\t" + tempMult + " = " + $5.label + " * " + to_string(mat.arraySize2) + ";\n" +
+                                 "\t" + tempIdx  + " = " + tempMult + " + " + $8.label + ";\n" +
+                                 "\t" + destino.label + " = " + mat.label + "[" + tempIdx + "];\n";
+                $$.label = $1.label;
+                $$.tipo  = destino.tipoVariavel;
+            }
+            | TK_ID '=' TK_ID '[' EXP ']'
+            {
+                TIPO_SIMBOLO vet = pegaVariavelTabelaSimbolos($3.label);
+                if (!vet.isArray || vet.arraySize2 != 0) yyerror("'" + $3.label + "' não é vetor 1D.");
+                TIPO_SIMBOLO destino = pegaVariavelTabelaSimbolos($1.label);
+                if (destino.tipoVariavel != vet.tipoVariavel) yyerror("Tipos incompatíveis.");
+                if ($5.tipo != "int") yyerror("Índice do vetor deve ser inteiro.");
 
-        // 3) Verifica se é realmente um vetor
-        if (!temp.isArray)
-            yyerror("Variável '" + $1.label + "' não é um vetor.");
-
-        // 4) O índice deve ser inteiro
-        if ($3.tipo != "int")
-            yyerror("Índice de vetor deve ser inteiro: tipo recebido '" + $3.tipo + "'.");
-
-        // 5) Verifica compatibilidade de tipos no RHS
-        if (temp.tipoVariavel != pegaTipo($6.tipo))
-            yyerror("Tipo incompatível ao atribuir em vetor '" + $1.label + "'.");
-
-        // 6) Monta o acesso e a tradução
-        $$.label = temp.label;                     // o próprio vetor
-        $$.traducao = $3.traducao    // tradução da expressão de índice
-                    + $6.traducao    // tradução do RHS
-                    + "\t" + temp.label 
-                    + "[" + $3.label + "] = " + $6.label + ";\n";
-    }
-    |TK_ID '[' EXP ']' '[' EXP ']' '=' EXP
-    {
-    if (!verificaTabelaSimbolos($1.label))
-        yyerror("Matriz não declarada: " + $1.label);
-
-    TIPO_SIMBOLO mat = pegaVariavelTabelaSimbolos($1.label);
-
-    if (!mat.isArray || mat.arraySize2 == 0)
-        yyerror("'" + $1.label + "' não é matriz 2D.");
-
-    if ($3.tipo != "int" || $6.tipo != "int")
-        yyerror("Índices de matriz devem ser inteiros.");
-
-    if (mat.tipoVariavel != pegaTipo($9.tipo))
-        yyerror("Tipo incompatível ao atribuir em matriz '" + $1.label + "'.");
-
-    // Cria temporárias para calcular índice linearizado
-    string tempMult = insereTemporariasTabelaSimbolos("temp", "int");
-    string tempIdx  = insereTemporariasTabelaSimbolos("temp", "int");
-
-    $$.traducao  = $3.traducao               // código de i
-                 + $6.traducao               // código de j
-                 + "\t" + tempMult + " = " + $3.label + " * " + to_string(mat.arraySize2) + ";\n"
-                 + "\t" + tempIdx  + " = " + tempMult + " + " + $6.label + ";\n"
-                 + $9.traducao               // código do valor
-                 + "\t" + mat.label + "[" + tempIdx + "] = " + $9.label + ";\n";
-
-    }
-    | TK_ID '=' TK_ID '[' EXP ']' '[' EXP ']'
-        {
-        // 1) Verifica se a matriz existe
-        if (!verificaTabelaSimbolos($3.label))
-            yyerror("Matriz não declarada: " + $3.label);
-
-        // 2) Recupera o símbolo
-        TIPO_SIMBOLO mat = pegaVariavelTabelaSimbolos($3.label);
-
-        // 3) Verifica se é uma matriz 2D
-        if (!mat.isArray || mat.arraySize2 == 0)
-            yyerror("'" + $3.label + "' não é matriz 2D.");
-
-        // 4) Verifica se o lado esquerdo existe e é variável atribuível
-        if (!verificaTabelaSimbolos($1.label))
-            yyerror("Variável '" + $1.label + "' não declarada.");
-
-        TIPO_SIMBOLO destino = pegaVariavelTabelaSimbolos($1.label);
-
-        // 5) Tipos compatíveis?
-        if (destino.tipoVariavel != mat.tipoVariavel)
-            yyerror("Tipos incompatíveis entre '" + $1.label + "' e matriz '" + $3.label + "'.");
-
-        // 6) Índices devem ser inteiros
-        if ($5.tipo != "int" || $8.tipo != "int")
-            yyerror("Índices da matriz devem ser inteiros.");
-
-        // 7) Gerar temporários
-        string tempMult = insereTemporariasTabelaSimbolos("temp", "int");
-        string tempIdx  = insereTemporariasTabelaSimbolos("temp", "int");
-
-        // 8) Tradução
-        $$.traducao  = $5.traducao              // código do primeiro índice
-                        + $8.traducao              // código do segundo índice
-                        + "\t" + tempMult + " = " + $5.label + " * " + to_string(mat.arraySize2) + ";\n"
-                        + "\t" + tempIdx  + " = " + tempMult + " + " + $8.label + ";\n"
-                        + "\t" + destino.label + " = " + mat.label + "[" + tempIdx + "];\n";
-
-        $$.label = $1.label;
-        $$.tipo  = destino.tipoVariavel;
-        }
-        | TK_ID '=' TK_ID '[' EXP ']'
-{
-    // 1) Verifica se vetor existe
-    if (!verificaTabelaSimbolos($3.label))
-        yyerror("Vetor não declarado: " + $3.label);
-
-    // 2) Recupera símbolo do vetor
-    TIPO_SIMBOLO vet = pegaVariavelTabelaSimbolos($3.label);
-
-    // 3) Verifica se é vetor 1D (array com arraySize e arraySize2 == 0)
-    if (!vet.isArray || vet.arraySize2 != 0)
-        yyerror("'" + $3.label + "' não é vetor 1D.");
-
-    // 4) Verifica se variável destino existe
-    if (!verificaTabelaSimbolos($1.label))
-        yyerror("Variável '" + $1.label + "' não declarada.");
-
-    TIPO_SIMBOLO destino = pegaVariavelTabelaSimbolos($1.label);
-
-    // 5) Verifica compatibilidade de tipos
-    if (destino.tipoVariavel != vet.tipoVariavel)
-        yyerror("Tipos incompatíveis entre '" + $1.label + "' e vetor '" + $3.label + "'.");
-
-    // 6) Índice deve ser inteiro
-    if ($5.tipo != "int")
-        yyerror("Índice do vetor deve ser inteiro.");
-
-    // 7) Cria tradução
-    $$.traducao  = $5.traducao                   // código do índice
-                 + "\t" + $1.label + " = " + vet.label + "[" + $5.label + "];\n";
-
-    $$.label = destino.label;
-    $$.tipo  = destino.tipoVariavel;
-}
-      ;  
+                $$.traducao  = $5.traducao + "\t" + $1.label + " = " + vet.label + "[" + $5.label + "];\n";
+                $$.label = destino.label;
+                $$.tipo  = destino.tipoVariavel;
+            }
+            ;   
 
 EXP         : EXP '+' TERMO 
             {   
-                
-                if(debug) cout << "[DEBUG] Operação + entre: " << $1.tipo << " e " << $3.tipo 
-                << "\n  Label1: " << $1.label << " | Label2: " << $3.label << endl;
-
                 $$.tipo = infereTipo($1.tipo, $3.tipo);
-                $$.label = insereTemporariasTabelaSimbolos("", $$.tipo);
                 $$.traducao = $1.traducao + $3.traducao;
 
-                if($1.tipo == "int" && $3.tipo == "float") 
-                {
-                    if(debug) cout << "[DEBUG] Convertendo int para float: " << $1.label << endl;
-                    string temporario = insereTemporariasTabelaSimbolos("","float");
-                    $$.traducao += "\t" + temporario + " = (float) " + $1.label + ";\n" +
-                    "\t" + $$.label + " = " + temporario + " + " + $3.label + ";\n"; 
+                // --- LÓGICA DE CONCATENAÇÃO DE STRING (IDÊNTICA EM AMBOS OS CÓDIGOS) ---
+                if ($$.tipo == "string") {
+                    $$.label = insereTemporariasTabelaSimbolos("", "string");
+                    string temp_len1 = insereTemporariasTabelaSimbolos("", "int");
+                    string temp_len2 = insereTemporariasTabelaSimbolos("", "int");
+                    string temp_total_len = insereTemporariasTabelaSimbolos("", "int");
+                    stringstream ss;
 
-                }
-                else if($1.tipo == "float" && $3.tipo == "int") 
-                {
-                    if(debug) cout << "[DEBUG] Convertendo int para float: " << $1.label << endl;
-                    string temporario = insereTemporariasTabelaSimbolos("","float");
-                    $$.traducao += "\t" + temporario + " = (float) " + $3.label + ";\n" + 
-                    "\t" + $$.label + " = " + $1.label + " + " + temporario + ";\n"; 
-                }
-                else if($1.tipo == "bool" || $3.tipo == "bool" || $1.tipo == "string" || $3.tipo == "string")
-                {
-                    string erro = "[ERRO] Operação '+' inválida entre tipos " + $1.tipo + " e " + $3.tipo;
-                    yyerror(erro);
-                }
-                else 
-                {
-                    $$.traducao += "\t" + $$.label + " = " + $1.label + " + " + $3.label + ";\n";
+                    if ($1.tipo == "string_literal") {
+                        ss << "\t" << temp_len1 << " = " << tamanho_string($1.label) - 1 << ";\n";
+                    } else {
+                        ss << "\t" << temp_len1 << " = meu_strlen(" << $1.label << ");\n";
+                    }
+
+                    if ($3.tipo == "string_literal") {
+                        ss << "\t" << temp_len2 << " = " << tamanho_string($3.label) - 1 << ";\n";
+                    } else {
+                        ss << "\t" << temp_len2 << " = meu_strlen(" << $3.label << ");\n";
+                    }
+
+                    ss << "\t" << temp_total_len << " = " << temp_len1 << " + " << temp_len2 << " + 1;\n";
+                    ss << "\t" << $$.label << " = (char*) malloc(" << temp_total_len << ");\n";
+                    ss << "\tstrcpy(" << $$.label << ", " << $1.label << ");\n";
+                    ss << "\tstrcat(" << $$.label << ", " << $3.label << ");\n";
+                    $$.traducao += ss.str();
+                    variaveisAlocadas.insert($$.label);
+                } 
+                // Lógica original para números
+                else {
+                    $$.label = insereTemporariasTabelaSimbolos("", $$.tipo);
+                    if($1.tipo == "int" && $3.tipo == "float") {
+                        string temporario = insereTemporariasTabelaSimbolos("","float");
+                        $$.traducao += "\t" + temporario + " = (float) " + $1.label + ";\n" +
+                                        "\t" + $$.label + " = " + temporario + " + " + $3.label + ";\n";
+                    } else if($1.tipo == "float" && $3.tipo == "int") {
+                        string temporario = insereTemporariasTabelaSimbolos("","float");
+                        $$.traducao += "\t" + temporario + " = (float) " + $3.label + ";\n" +
+                                        "\t" + $$.label + " = " + $1.label + " + " + temporario + ";\n";
+                    } else if($1.tipo == "bool" || $3.tipo == "bool") {
+                        yyerror("[ERRO] Operação '+' inválida entre tipos " + $1.tipo + " e " + $3.tipo);
+                    } else {
+                        $$.traducao += "\t" + $$.label + " = " + $1.label + " + " + $3.label + ";\n";
+                    }
                 }
             }
             | EXP '-' TERMO 
             {   
-                if(debug) cout << "\n[DEBUG] Operação - entre: " << $1.tipo << " e " << $3.tipo 
-                << "\n\t  Label1: " << $1.label << " | Label2: " << $3.label << endl;
                 $$.tipo = infereTipo($1.tipo, $3.tipo);
                 $$.label = insereTemporariasTabelaSimbolos("", $$.tipo);
                 $$.traducao = $1.traducao + $3.traducao;
                 
-                if($1.tipo == "int" && $3.tipo == "float") 
-                {
-                    if(debug) cout << "[DEBUG] Convertendo int para float: " << $1.label << endl;
+                if($1.tipo == "int" && $3.tipo == "float") {
                     string temporario = insereTemporariasTabelaSimbolos("","float");
                     $$.traducao += "\t" + temporario + " = (float) " + $1.label + ";\n" +
-                    "\t" + $$.label + " = " + temporario + " - " + $3.label + ";\n"; 
-
-                }
-                else if($1.tipo == "float" && $3.tipo == "int") 
-                {
-                    if(debug) cout << "[DEBUG] Convertendo int para float: " << $1.label << endl;
+                                    "\t" + $$.label + " = " + temporario + " - " + $3.label + ";\n"; 
+                } else if($1.tipo == "float" && $3.tipo == "int") {
                     string temporario = insereTemporariasTabelaSimbolos("","float");
                     $$.traducao += "\t" + temporario + " = (float) " + $3.label + ";\n" + 
-                    "\t" + $$.label + " = " + $1.label + " - " + temporario + ";\n"; 
-                }
-                else if($1.tipo == "bool" || $3.tipo == "bool"|| $1.tipo == "string" || $3.tipo == "string")
-                {
-                    string erro = "[ERRO] Operação '-' inválida entre tipos " + $1.tipo + " e " + $3.tipo;
-                    yyerror(erro);
-                }
-                else 
-                {
+                                    "\t" + $$.label + " = " + $1.label + " - " + temporario + ";\n"; 
+                } else if($1.tipo == "bool" || $3.tipo == "bool"|| $1.tipo == "string" || $3.tipo == "string") {
+                    yyerror("[ERRO] Operação '-' inválida entre tipos " + $1.tipo + " e " + $3.tipo);
+                } else {
                     $$.traducao += "\t" + $$.label + " = " + $1.label + " - " + $3.label + ";\n";
                 }
             }
@@ -894,490 +810,310 @@ EXP         : EXP '+' TERMO
             {   
                 $$.tipo = "bool";
                 $$.label = insereTemporariasTabelaSimbolos("", $$.tipo);
-
-                if(($1.tipo == "int" && $3.tipo == "float") || ($1.tipo == "float" && $3.tipo == "int")) 
-                { 
-                    string erro = "[ERRO] Operação '>' inválida entre tipos " + $1.tipo + " e " + $3.tipo;
-                    yyerror(erro);
-                }
-                else if($1.tipo == "bool" || $3.tipo == "bool" || $1.tipo == "string" || $3.tipo == "string" )
-                    yyerror("Operandos inválidos\n");
-                    
-                $$.traducao = $1.traducao + $3.traducao +
-                "\t" + $$.label + " = " + $1.label + " > " + $3.label + ";\n";
+                if($1.tipo == "bool" || $3.tipo == "bool" || $1.tipo == "string" || $3.tipo == "string") yyerror("Operandos inválidos\n");
+                $$.traducao = $1.traducao + $3.traducao + "\t" + $$.label + " = " + $1.label + " > " + $3.label + ";\n";
             }
             | EXP '<' TERMO 
             {
                 $$.tipo = "bool";
                 $$.label = insereTemporariasTabelaSimbolos("", $$.tipo);
-
-                if(($1.tipo == "int" && $3.tipo == "float") || ($1.tipo == "float" && $3.tipo == "int")) 
-                {
-                    string erro = "[ERRO] Operação '<' inválida entre tipos " + $1.tipo + " e " + $3.tipo;
-                    yyerror(erro);
-                }
-                else if($1.tipo == "bool" || $3.tipo == "bool" || $1.tipo == "string" || $3.tipo == "string")
-                    yyerror("Operandos inválidos\n");
-                
-                $$.traducao = $1.traducao + $3.traducao +
-                "\t" + $$.label + " = " + $1.label + " < " + $3.label + ";\n";
+                if($1.tipo == "bool" || $3.tipo == "bool" || $1.tipo == "string" || $3.tipo == "string") yyerror("Operandos inválidos\n");
+                $$.traducao = $1.traducao + $3.traducao + "\t" + $$.label + " = " + $1.label + " < " + $3.label + ";\n";
             }
-            | EXP TK_MAIOR_IGUAL TERMO // fazer verificação de tipo aqui
+            | EXP TK_MAIOR_IGUAL TERMO
             {
                 $$.tipo = "bool";
                 $$.label = insereTemporariasTabelaSimbolos("", $$.tipo);
-                if(($1.tipo == "int" && $3.tipo == "float") || ($1.tipo == "float" && $3.tipo == "int")) 
-                {
-                    string erro = "[ERRO] Operação '>=' inválida entre tipos " + $1.tipo + " e " + $3.tipo;
-                    yyerror(erro);
-                }
-                else if($1.tipo == "bool" || $3.tipo == "bool" || $1.tipo == "string" || $3.tipo == "string")
-                    yyerror("Operandos inválidos\n");
-                
-                $$.traducao = $1.traducao + $3.traducao +
-                "\t" + $$.label + " = " + $1.label + " >= " + $3.label + ";\n";
+                if($1.tipo == "bool" || $3.tipo == "bool" || $1.tipo == "string" || $3.tipo == "string") yyerror("Operandos inválidos\n");
+                $$.traducao = $1.traducao + $3.traducao + "\t" + $$.label + " = " + $1.label + " >= " + $3.label + ";\n";
             }
             | EXP TK_MENOR_IGUAL TERMO 
             {
                 $$.tipo = "bool";
                 $$.label = insereTemporariasTabelaSimbolos("", $$.tipo);
-
-                if(($1.tipo == "int" && $3.tipo == "float") || ($1.tipo == "float" && $3.tipo == "int")) 
-                {
-                    string erro = "[ERRO] Operação '<=' inválida entre tipos " + $1.tipo + " e " + $3.tipo;
-                    yyerror(erro);
-                }
-                else if($1.tipo == "bool" || $3.tipo == "bool" || $1.tipo == "string" || $3.tipo == "string")
-                    yyerror("Operandos inválidos\n");
-                
-                $$.traducao = $1.traducao + $3.traducao +
-                "\t" + $$.label + " = " + $1.label + " <= " + $3.label + ";\n";
+                if($1.tipo == "bool" || $3.tipo == "bool" || $1.tipo == "string" || $3.tipo == "string") yyerror("Operandos inválidos\n");
+                $$.traducao = $1.traducao + $3.traducao + "\t" + $$.label + " = " + $1.label + " <= " + $3.label + ";\n";
             }
-            | EXP TK_DIFERENTE TERMO // os dois precisam ser o mesmo tipo
+            | EXP TK_DIFERENTE TERMO
             {
                 $$.tipo = "bool";
                 $$.label = insereTemporariasTabelaSimbolos("", $$.tipo);
-                if(($1.tipo == "int" && $3.tipo == "float") || ($1.tipo == "float" && $3.tipo == "int")) 
-                {
-                    string erro = "[ERRO] Operação '!=' inválida entre tipos " + $1.tipo + " e " + $3.tipo;
-                    yyerror(erro);
-                }
-                else if($1.tipo == "bool" || $3.tipo == "bool" || $1.tipo == "string" || $3.tipo == "string")
-                    yyerror("Operandos inválidos\n");
-                
-                $$.traducao = $1.traducao + $3.traducao +
-                "\t" + $$.label + " = " + $1.label + " != " + $3.label + ";\n";          
+                if($1.tipo == "bool" || $3.tipo == "bool" || $1.tipo == "string" || $3.tipo == "string") yyerror("Operandos inválidos\n");
+                $$.traducao = $1.traducao + $3.traducao + "\t" + $$.label + " = " + $1.label + " != " + $3.label + ";\n";
             }
             | EXP TK_IGUAL TERMO 
             {
                 $$.tipo = "bool";
                 $$.label = insereTemporariasTabelaSimbolos("", $$.tipo);
-                if(($1.tipo == "int" && $3.tipo == "float") || ($1.tipo == "float" && $3.tipo == "int")) 
-                    {
-                        string erro = "[ERRO] Operação '==' inválida entre tipos " + $1.tipo + " e " + $3.tipo;
-                        yyerror(erro);
-                    }
-                else if($1.tipo == "bool" || $3.tipo == "bool" || $1.tipo == "string" || $3.tipo == "string")
-                    yyerror("Operandos inválidos\n");
-                
-                $$.traducao = $1.traducao + $3.traducao +
-                "\t" + $$.label + " = " + $1.label + " == " + $3.label + ";\n";          
+                if($1.tipo == "bool" || $3.tipo == "bool" || $1.tipo == "string" || $3.tipo == "string") yyerror("Operandos inválidos\n");
+                $$.traducao = $1.traducao + $3.traducao + "\t" + $$.label + " = " + $1.label + " == " + $3.label + ";\n";
             }
             | EXP TK_E_LOGICO TERMO
             {
                 $$.tipo = "bool";
                 $$.label = insereTemporariasTabelaSimbolos("", $$.tipo);
-
-                if($1.tipo != "bool" || $3.tipo != "bool")
-                    yyerror("Operandos inválidos\n");
-
-                $$.traducao = $1.traducao + $3.traducao +
-                "\t" + $$.label + " = " + $1.label + " && " + $3.label + ";\n";  
+                if($1.tipo != "bool" || $3.tipo != "bool") yyerror("Operandos inválidos\n");
+                $$.traducao = $1.traducao + $3.traducao + "\t" + $$.label + " = " + $1.label + " && " + $3.label + ";\n";   
             }
             | EXP TK_OU_LOGICO TERMO
             {
                 $$.tipo = "bool";
                 $$.label = insereTemporariasTabelaSimbolos("", $$.tipo);
-
-                if($1.tipo != "bool" || $3.tipo != "bool")
-                    yyerror("Operandos inválidos\n");
-
-                $$.traducao = $1.traducao + $3.traducao +
-                "\t" + $$.label + " = " + $1.label + " || " + $3.label + ";\n";  
+                if($1.tipo != "bool" || $3.tipo != "bool") yyerror("Operandos inválidos\n");
+                $$.traducao = $1.traducao + $3.traducao + "\t" + $$.label + " = " + $1.label + " || " + $3.label + ";\n";   
             }
-            | TERMO             
-            { 
-                $$.label = $1.label;
-                $$.traducao = $1.traducao;
-                $$.tipo = $1.tipo;        
-            } 
+            | TERMO
+            { $$ = $1; }
             ;
 
 TERMO       : TERMO '*' FATOR
             {   
                 $$.tipo = infereTipo($1.tipo, $3.tipo);
-                $$.label = insereTemporariasTabelaSimbolos("",   $$.tipo);
+                $$.label = insereTemporariasTabelaSimbolos("", $$.tipo);
                 $$.traducao = $1.traducao + $3.traducao;
 
-                if($1.tipo == "int" && $3.tipo == "float") 
-                {
-                    if(debug) cout << "[DEBUG] Convertendo int para float: " << $1.label << endl;
+                if($1.tipo == "int" && $3.tipo == "float") {
                     string temporario = insereTemporariasTabelaSimbolos("","float");
                     $$.traducao += "\t" + temporario + " = (float) " + $1.label + ";\n" +
-                    "\t" + $$.label + " = " + temporario + " * " + $3.label + ";\n"; 
-
-                }
-                else if($1.tipo == "float" && $3.tipo == "int") 
-                {
-                    if(debug) cout << "[DEBUG] Convertendo int para float: " << $1.label << endl;
+                                    "\t" + $$.label + " = " + temporario + " * " + $3.label + ";\n"; 
+                } else if($1.tipo == "float" && $3.tipo == "int") {
                     string temporario = insereTemporariasTabelaSimbolos("","float");
                     $$.traducao += "\t" + temporario + " = (float) " + $3.label + ";\n" + 
-                    "\t" + $$.label + " = " + $1.label + " * " + temporario + ";\n"; 
-                }
-                else if($1.tipo == "bool" || $3.tipo == "bool" || $1.tipo == "string" || $3.tipo == "string")
-                {
-                    string erro = "[ERRO] Operação '*' inválida entre tipos " + $1.tipo + " e " + $3.tipo;
-                    yyerror(erro);
-                }
-                else 
-                {
-                    $$.traducao = "\t" + $$.label + " = " + $1.label + " * " + $3.label + ";\n";
+                                    "\t" + $$.label + " = " + $1.label + " * " + temporario + ";\n"; 
+                } else if($1.tipo == "bool" || $3.tipo == "bool" || $1.tipo == "string" || $3.tipo == "string") {
+                    yyerror("[ERRO] Operação '*' inválida entre tipos " + $1.tipo + " e " + $3.tipo);
+                } else {
+                    $$.traducao += "\t" + $$.label + " = " + $1.label + " * " + $3.label + ";\n";
                 }
             }
             | TERMO '/' FATOR 
             { 
                 $$.tipo = infereTipo($1.tipo, $3.tipo);
-                $$.label = insereTemporariasTabelaSimbolos("",   $$.tipo);
+                $$.label = insereTemporariasTabelaSimbolos("", $$.tipo);
                 $$.traducao = $1.traducao + $3.traducao;
 
-                if($1.tipo == "int" && $3.tipo == "float") 
-                {
-                    if(debug) cout << "[DEBUG] Convertendo int para float: " << $1.label << endl;
+                if($1.tipo == "int" && $3.tipo == "float") {
                     string temporario = insereTemporariasTabelaSimbolos("","float");
                     $$.traducao += "\t" + temporario + " = (float) " + $1.label + ";\n" +
-                    "\t" + $$.label + " = " + temporario + " / " + $3.label + ";\n"; 
-
-                }
-                else if($1.tipo == "float" && $3.tipo == "int") 
-                {
-                    if(debug) cout << "[DEBUG] Convertendo int para float: " << $1.label << endl;
+                                    "\t" + $$.label + " = " + temporario + " / " + $3.label + ";\n"; 
+                } else if($1.tipo == "float" && $3.tipo == "int") {
                     string temporario = insereTemporariasTabelaSimbolos("","float");
                     $$.traducao += "\t" + temporario + " = (float) " + $3.label + ";\n" + 
-                    "\t" + $$.label + " = " + $1.label + " / " + temporario + ";\n"; 
-                }
-                else if($1.tipo == "bool" || $3.tipo == "bool" || $1.tipo == "string" || $3.tipo == "string")
-                {
-                    string erro = "[ERRO] Operação '/' inválida entre tipos " + $1.tipo + " e " + $3.tipo;
-                    yyerror(erro);
-                }
-                else 
-                {
-                    $$.traducao = "\t" + $$.label + " = " + $1.label + " / " + $3.label + ";\n";
+                                    "\t" + $$.label + " = " + $1.label + " / " + temporario + ";\n"; 
+                } else if($1.tipo == "bool" || $3.tipo == "bool" || $1.tipo == "string" || $3.tipo == "string") {
+                    yyerror("[ERRO] Operação '/' inválida entre tipos " + $1.tipo + " e " + $3.tipo);
+                } else {
+                    $$.traducao += "\t" + $$.label + " = " + $1.label + " / " + $3.label + ";\n";
                 }
             }
-            | FATOR             
-            { 
-                $$.label = $1.label;
-                $$.traducao = $1.traducao; 
-                $$.tipo = $1.tipo;
-            }
+            | FATOR
+            { $$ = $1; }
             ;
 
 FATOR       : TK_ID '(' LISTA_ARGS ')'
-        {
-            string nomeFunc = $1.label;
-            
-            // -----  👇 LÓGICA MODIFICADA AQUI 👇 -----
-
-            // 1. Verifica se a função existe na tabela de funções
-            if (!tabelaFuncoes.count(nomeFunc)) {
-                yyerror("Função '" + nomeFunc + "' não foi declarada.");
-            }
-
-            // 2. Pega as informações da função (especialmente o tipo de retorno)
-            TIPO_FUNCAO infoFunc = tabelaFuncoes[nomeFunc];
-            string tipoRetorno = infoFunc.tipoRetorno;
-            
-            // 3. Gera um temporário para receber o valor retornado
-            $$.label = insereTemporariasTabelaSimbolos("", tipoRetorno);
-            $$.tipo = tipoRetorno;
-            $$.traducao = $3.traducao + "\t" + $$.label + " = " + nomeFunc + "(" + $3.label + ");\n";
-        }
-        | '-' FATOR
             {
-                // Checagem de tipo: O operador '-' unário só se aplica a números.
+                string nomeFunc = $1.label;
+                
+                if (!tabelaFuncoes.count(nomeFunc)) {
+                    yyerror("Função '" + nomeFunc + "' não foi declarada.");
+                }
+
+                TIPO_FUNCAO infoFunc = tabelaFuncoes[nomeFunc];
+                string tipoRetorno = infoFunc.tipoRetorno;
+                
+                $$.label = insereTemporariasTabelaSimbolos("", tipoRetorno);
+                $$.tipo = tipoRetorno;
+                $$.traducao = $3.traducao + "\t" + $$.label + " = " + nomeFunc + "(" + $3.label + ");\n";
+            }
+            | '-' FATOR
+            {
                 if ($2.tipo != "int" && $2.tipo != "float") {
                     yyerror("Operador '-' unario so pode ser aplicado a tipos numericos (int, float).");
                 }
-                
-                // O tipo do resultado é o mesmo do operando.
                 $$.tipo = $2.tipo; 
-                // Criamos uma nova variável temporária para guardar o resultado.
                 $$.label = insereTemporariasTabelaSimbolos("", $$.tipo);
-                
-                // A tradução inclui o código do operando ($2.traducao)
-                // seguido pela instrução de negação.
-                $$.traducao = $2.traducao + 
-                            "\t" + $$.label + " = -" + $2.label + ";\n";
+                $$.traducao = $2.traducao + "\t" + $$.label + " = -" + $2.label + ";\n";
             }
             | TK_INCREMENTO TK_ID
             {
                 TIPO_SIMBOLO var = pegaVariavelTabelaSimbolos($2.label);
-                if (var.tipoVariavel != "int" && var.tipoVariavel != "float") {
-                    yyerror("Operador '++' so pode ser aplicado a variaveis numericas.");
-                }
+                if (var.tipoVariavel != "int" && var.tipoVariavel != "float") yyerror("Operador '++' so pode ser aplicado a variaveis numericas.");
 
                 $$.tipo = var.tipoVariavel;
-
-                // 1. Temporária para o valor 1.
                 string temp_um = insereTemporariasTabelaSimbolos("", var.tipoVariavel);
-                // 2. Temporária para o valor atual da variável.
                 string temp_valor_var = insereTemporariasTabelaSimbolos("", var.tipoVariavel);
-                // 3. Temporária para o resultado da soma.
                 string temp_soma = insereTemporariasTabelaSimbolos("", var.tipoVariavel);
 
                 stringstream ss;
-                ss << "\t" << temp_um << " = 1;\n";                                    // temp_um = 1;
-                ss << "\t" << temp_valor_var << " = " << var.label << ";\n";           // temp_valor_var = x;
-                ss << "\t" << temp_soma << " = " << temp_valor_var << " + " << temp_um << ";\n"; // temp_soma = temp_valor_var + temp_um;
-                ss << "\t" << var.label << " = " << temp_soma << ";\n";                // x = temp_soma;
-
+                ss << "\t" << temp_um << " = 1;\n";
+                ss << "\t" << temp_valor_var << " = " << var.label << ";\n";
+                ss << "\t" << temp_soma << " = " << temp_valor_var << " + " << temp_um << ";\n";
+                ss << "\t" << var.label << " = " << temp_soma << ";\n";
                 $$.traducao = ss.str();
                 $$.label = var.label;
             }
             | TK_ID TK_INCREMENTO
             {
                 TIPO_SIMBOLO var = pegaVariavelTabelaSimbolos($1.label);
-                if (var.tipoVariavel != "int" && var.tipoVariavel != "float") {
-                    yyerror("Operador '++' so pode ser aplicado a variaveis numericas.");
-                }
+                if (var.tipoVariavel != "int" && var.tipoVariavel != "float") yyerror("Operador '++' so pode ser aplicado a variaveis numericas.");
 
-                // O tipo do resultado é o tipo da variável.
                 $$.tipo = var.tipoVariavel;
-
-                // 1. A primeira temporária (temp_retorno) recebe o valor da variável (para ser o resultado da expressão).
                 string temp_retorno = insereTemporariasTabelaSimbolos("", var.tipoVariavel);
-                
-                // 2. A segunda temporária (temp_um) recebe o valor 1.
                 string temp_um = insereTemporariasTabelaSimbolos("", var.tipoVariavel);
-                
-                // 3. A terceira temporária (temp_soma) recebe o resultado da soma.
                 string temp_soma = insereTemporariasTabelaSimbolos("", var.tipoVariavel);
 
                 stringstream ss;
-                ss << "\t" << temp_retorno << " = " << var.label << ";\n";              // temp_retorno = x; (Guarda o valor original)
-                ss << "\t" << temp_um << " = 1;\n";                                    // temp_um = 1;
-                ss << "\t" << temp_soma << " = " << temp_retorno << " + " << temp_um << ";\n"; // temp_soma = temp_retorno + temp_um;
-                ss << "\t" << var.label << " = " << temp_soma << ";\n";                // x = temp_soma;
-
+                ss << "\t" << temp_retorno << " = " << var.label << ";\n";
+                ss << "\t" << temp_um << " = 1;\n";
+                ss << "\t" << temp_soma << " = " << temp_retorno << " + " << temp_um << ";\n";
+                ss << "\t" << var.label << " = " << temp_soma << ";\n";
                 $$.traducao = ss.str();
-                $$.label = temp_retorno; // O resultado da expressão x++ é o valor ANTES do incremento.
+                $$.label = temp_retorno;
             }
             | TK_DECREMENTO TK_ID
             {
-                    TIPO_SIMBOLO var = pegaVariavelTabelaSimbolos($2.label);
-                    if (var.tipoVariavel != "int" && var.tipoVariavel != "float") {
-                        yyerror("Operador '--' so pode ser aplicado a variaveis numericas.");
-                    }
+                TIPO_SIMBOLO var = pegaVariavelTabelaSimbolos($2.label);
+                if (var.tipoVariavel != "int" && var.tipoVariavel != "float") yyerror("Operador '--' so pode ser aplicado a variaveis numericas.");
+                
+                $$.tipo = var.tipoVariavel;
+                string temp_um = insereTemporariasTabelaSimbolos("", var.tipoVariavel);
+                string temp_valor_var = insereTemporariasTabelaSimbolos("", var.tipoVariavel);
+                string temp_sub = insereTemporariasTabelaSimbolos("", var.tipoVariavel);
 
-                    $$.tipo = var.tipoVariavel;
-                    
-                    string temp_um = insereTemporariasTabelaSimbolos("", var.tipoVariavel);
-                    string temp_valor_var = insereTemporariasTabelaSimbolos("", var.tipoVariavel);
-                    string temp_sub = insereTemporariasTabelaSimbolos("", var.tipoVariavel);
-
-                    stringstream ss;
-                    ss << "\t" << temp_um << " = 1;\n";                                    // temp_um = 1;
-                    ss << "\t" << temp_valor_var << " = " << var.label << ";\n";           // temp_valor_var = x;
-                    ss << "\t" << temp_sub << " = " << temp_valor_var << " - " << temp_um << ";\n"; // temp_sub = temp_valor_var - temp_um;
-                    ss << "\t" << var.label << " = " << temp_sub << ";\n";                // x = temp_sub;
-                    
-                    $$.traducao = ss.str();
-                    $$.label = var.label; // O resultado é o novo valor.
+                stringstream ss;
+                ss << "\t" << temp_um << " = 1;\n";
+                ss << "\t" << temp_valor_var << " = " << var.label << ";\n";
+                ss << "\t" << temp_sub << " = " << temp_valor_var << " - " << temp_um << ";\n";
+                ss << "\t" << var.label << " = " << temp_sub << ";\n";
+                $$.traducao = ss.str();
+                $$.label = var.label;
             }
             | TK_ID TK_DECREMENTO
             {
                 TIPO_SIMBOLO var = pegaVariavelTabelaSimbolos($1.label);
-                if (var.tipoVariavel != "int" && var.tipoVariavel != "float") {
-                    yyerror("Operador '--' so pode ser aplicado a variaveis numericas.");
-                }
+                if (var.tipoVariavel != "int" && var.tipoVariavel != "float") yyerror("Operador '--' so pode ser aplicado a variaveis numericas.");
 
                 $$.tipo = var.tipoVariavel;
-
                 string temp_retorno = insereTemporariasTabelaSimbolos("", var.tipoVariavel);
                 string temp_um = insereTemporariasTabelaSimbolos("", var.tipoVariavel);
                 string temp_sub = insereTemporariasTabelaSimbolos("", var.tipoVariavel);
-
+                
                 stringstream ss;
-                ss << "\t" << temp_retorno << " = " << var.label << ";\n";              // temp_retorno = x;
-                ss << "\t" << temp_um << " = 1;\n";                                    // temp_um = 1;
-                ss << "\t" << temp_sub << " = " << temp_retorno << " - " << temp_um << ";\n"; // temp_sub = temp_retorno - temp_um;
-                ss << "\t" << var.label << " = " << temp_sub << ";\n";                // x = temp_sub;
-
+                ss << "\t" << temp_retorno << " = " << var.label << ";\n";
+                ss << "\t" << temp_um << " = 1;\n";
+                ss << "\t" << temp_sub << " = " << temp_retorno << " - " << temp_um << ";\n";
+                ss << "\t" << var.label << " = " << temp_sub << ";\n";
                 $$.traducao = ss.str();
-                $$.label = temp_retorno; // O resultado é o valor antigo.
+                $$.label = temp_retorno;
             }
-        |'(' EXP ')' 
-            { 
-                $$.label = $2.label;
-                $$.traducao = $2.traducao;
-                $$.tipo = $2.tipo;
-            }
+            |'(' EXP ')' 
+            { $$ = $2; }
             | '(' TK_TIPO ')' FATOR
             {   
                 $$.label = insereTemporariasTabelaSimbolos("", $2.label);
                 $$.tipo = $2.label;
-
-                $$.traducao = $4.traducao +
-                "\t" + $$.label + " = (" + $2.label + ") " + $4.label + ";\n";
+                $$.traducao = $4.traducao + "\t" + $$.label + " = (" + pegaTipo($2.label) + ") " + $4.label + ";\n";
             }
             | TK_ID
             {
-               // 1. Verifica se o símbolo existe na tabela antes de usá-lo.
-        if (!verificaTabelaSimbolos($1.label)) {
-            // Melhorei a mensagem de erro para ser mais específica.
-            yyerror("Variável não declarada: '" + $1.label + "'");
-        }
+                if (!verificaTabelaSimbolos($1.label)) {
+                    yyerror("Variável não declarada: '" + $1.label + "'");
+                }
+                TIPO_SIMBOLO simbolo = pegaVariavelTabelaSimbolos($1.label);
 
-        // 2. Se existe, pega as informações completas do símbolo.
-        TIPO_SIMBOLO simbolo = pegaVariavelTabelaSimbolos($1.label);
+                if (simbolo.isParam) {
+                    $$.label = simbolo.nomeVariavel;
+                } else {
+                    $$.label = simbolo.label;
+                }
 
-        // 3. LÓGICA PRINCIPAL CORRIGIDA:
-        //    Verifica o novo campo 'isParam' que adicionamos.
-        if (simbolo.isParam) {
-            // Se for um PARÂMETRO, o "label" que usaremos na tradução
-            // será o próprio NOME LOCAL da variável (ex: 'a', 'b').
-            $$.label = simbolo.nomeVariavel;
-        } else {
-            // Se for uma VARIÁVEL NORMAL, usamos o LABEL GLOBAL gerado
-            // (ex: 'T1', 'T2', etc.).
-            $$.label = simbolo.label;
-        }
+                $$.tipo = simbolo.tipoVariavel;
+                $$.traducao = "";
 
-        // 4. O resto da lógica continua igual:
-        //    Propaga o tipo e a tradução (que é vazia para um simples acesso).
-        $$.tipo = simbolo.tipoVariavel;
-        $$.traducao = "";
-
-        // Sua verificação de acesso a array, que é muito boa, continua aqui.
-        if (simbolo.isArray) {
-            yyerror("Acesso inválido: vetor/matriz '" + simbolo.nomeVariavel + "' usado sem índice.");
-        }
+                if (simbolo.isArray) {
+                    yyerror("Acesso inválido: vetor/matriz '" + simbolo.nomeVariavel + "' usado sem índice.");
+                }
             }
             | TK_NEGACAO TK_ID
             {
-                 $$.tipo = "bool";
-
-                TIPO_SIMBOLO temp;
-
-                // verificao se é a variável correta
-
-                if(!verificaTabelaSimbolos($2.label))
-                    yyerror("Não foi inicializado uma das variáveis");
-                else 
-                    temp = pegaVariavelTabelaSimbolos($2.label);
-
-                if("bool" != temp.tipoVariavel)
-                    yyerror("Operação inválida para o tipo da variável");
-
-
+                $$.tipo = "bool";
+                TIPO_SIMBOLO temp = pegaVariavelTabelaSimbolos($2.label);
+                if("bool" != temp.tipoVariavel) yyerror("Operação de negação inválida para o tipo da variável.");
                 $$.label = insereTemporariasTabelaSimbolos("", $$.tipo);
                 $$.traducao = "\t" + $$.label + " = !" + temp.label + ";\n";
             }
             | TK_INT
-            { 
-                $$.label = insereTemporariasTabelaSimbolos("", "nmr");
-                $$.traducao = "\t" + $$.label + " = " + $1.traducao + ";\n";
+            {   
+                $$.label = insereTemporariasTabelaSimbolos("", "int");
+                $$.traducao = "\t" + $$.label + " = " + $1.label + ";\n";
                 $$.tipo = "int"; 
             }
             | TK_FLOAT
             {   
-                $$.label = insereTemporariasTabelaSimbolos("", "ncv");
-                $$.traducao = "\t" + $$.label + " = " + $1.traducao + ";\n"; 
+                $$.label = insereTemporariasTabelaSimbolos("", "float");
+                $$.traducao = "\t" + $$.label + " = " + $1.label + ";\n"; 
                 $$.tipo = "float"; 
             }
             | TK_BOOLEAN
             {
-                $$.label = insereTemporariasTabelaSimbolos("", "pp");
+                $$.label = insereTemporariasTabelaSimbolos("", "bool");
                 string valor = pegaBooleano($1.label);
-
-                if(valor == "error") yyerror("Valor atribuído de forma errada!");
-
+                if(valor == "error") yyerror("Valor booleano inválido!");
                 $$.traducao = "\t" + $$.label + " = " + valor + ";\n";
                 $$.tipo = "bool"; 
             }
             | TK_CHAR
             {
-                $$.label = insereTemporariasTabelaSimbolos("", "letra");
-                $$.traducao = "\t" + $$.label + " = " + $1.traducao + ";\n";
+                $$.label = insereTemporariasTabelaSimbolos("", "char");
+                $$.traducao = "\t" + $$.label + " = " + $1.label + ";\n";
                 $$.tipo = "char"; 
             }
-            | TK_STRING{
-               cout << "label = " << $$.traducao << endl;
-               int tamanho = tamanho_string($$.traducao);
-               $$.label = insereTemporariasTabelaSimbolos("", "falada");
-               $$.traducao = "\tstrcpy(" + $$.label + ", " + $1.traducao + ");\n";
-               $$.tipo = "string"; 
+            // --- REGRA AJUSTADA PARA LITERAL DE STRING ---
+            | TK_STRING
+            {
+                // Apenas passa o literal (ex: "meu texto") para cima na árvore
+                // e marca o tipo como 'string_literal' para que outras regras saibam
+                // que não se trata de uma variável, mas de um valor constante.
+                $$.label = $1.label;
+                $$.traducao = $1.traducao;
+                $$.tipo = "string_literal"; 
             }
             | TK_ID '[' EXP ']' {
-            if (!verificaTabelaSimbolos($1.label))
-                yyerror("Vetor '" + $1.label + "' não declarado.");
+                TIPO_SIMBOLO vet = pegaVariavelTabelaSimbolos($1.label);
+                if (!vet.isArray || vet.arraySize2 != 0) yyerror("'" + $1.label + "' não é vetor 1D.");
+                if ($3.tipo != "int") yyerror("Índice do vetor deve ser inteiro.");
 
-            TIPO_SIMBOLO vet = pegaVariavelTabelaSimbolos($1.label);
-
-            if (!vet.isArray || vet.arraySize2 != 0)
-                yyerror("'" + $1.label + "' não é vetor 1D.");
-
-            if ($3.tipo != "int")
-                yyerror("Índice do vetor deve ser inteiro.");
-
-            string temp = insereTemporariasTabelaSimbolos("", vet.tipoVariavel);
-
-            $$.traducao = $3.traducao +
-                        "\t" + temp + " = " + vet.label + "[" + $3.label + "];\n";
-
-            $$.label = temp;
-            $$.tipo = vet.tipoVariavel;
+                string temp = insereTemporariasTabelaSimbolos("", vet.tipoVariavel);
+                $$.traducao = $3.traducao + "\t" + temp + " = " + vet.label + "[" + $3.label + "];\n";
+                $$.label = temp;
+                $$.tipo = vet.tipoVariavel;
             }
             | TK_ID '[' EXP ']' '[' EXP ']' {
-            if (!verificaTabelaSimbolos($1.label))
-                yyerror("Matriz '" + $1.label + "' não declarada.");
+                TIPO_SIMBOLO mat = pegaVariavelTabelaSimbolos($1.label);
+                if (!mat.isArray || mat.arraySize2 == 0) yyerror("'" + $1.label + "' não é matriz 2D.");
+                if ($3.tipo != "int" || $6.tipo != "int") yyerror("Índices da matriz devem ser inteiros.");
 
-            TIPO_SIMBOLO mat = pegaVariavelTabelaSimbolos($1.label);
-
-            if (!mat.isArray || mat.arraySize2 == 0)
-                yyerror("'" + $1.label + "' não é matriz 2D.");
-
-            if ($3.tipo != "int" || $6.tipo != "int")
-                yyerror("Índices da matriz devem ser inteiros.");
-
-            string tempMult = insereTemporariasTabelaSimbolos("", "int");
-            string tempIdx  = insereTemporariasTabelaSimbolos("", "int");
-            string tempRes  = insereTemporariasTabelaSimbolos("", mat.tipoVariavel);
-
-            $$.traducao = $3.traducao + $6.traducao +
-                        "\t" + tempMult + " = " + $3.label + " * " + to_string(mat.arraySize2) + ";\n" +
-                        "\t" + tempIdx  + " = " + tempMult + " + " + $6.label + ";\n" +
-                        "\t" + tempRes  + " = " + mat.label + "[" + tempIdx + "];\n";
-
-            $$.label = tempRes;
-            $$.tipo = mat.tipoVariavel;
+                string tempMult = insereTemporariasTabelaSimbolos("", "int");
+                string tempIdx  = insereTemporariasTabelaSimbolos("", "int");
+                string tempRes  = insereTemporariasTabelaSimbolos("", mat.tipoVariavel);
+                $$.traducao = $3.traducao + $6.traducao +
+                                 "\t" + tempMult + " = " + $3.label + " * " + to_string(mat.arraySize2) + ";\n" +
+                                 "\t" + tempIdx  + " = " + tempMult + " + " + $6.label + ";\n" +
+                                 "\t" + tempRes  + " = " + mat.label + "[" + tempIdx + "];\n";
+                $$.label = tempRes;
+                $$.tipo = mat.tipoVariavel;
             }
             ;
-            LISTA_ARGS
+
+LISTA_ARGS
     : EXP ',' LISTA_ARGS
         { 
-            // Concatena o código para computar os argumentos
             $$.traducao = $1.traducao + $3.traducao; 
-            // Concatena os labels dos resultados para passar para a função
             $$.label = $1.label + ", " + $3.label;
         }
     | EXP
-        { 
-            $$.traducao = $1.traducao; 
-            $$.label = $1.label;
-        }
-    | /* para chamadas sem argumentos, como func() */
+        { $$ = $1; }
+    | /* vazio */
         {
             $$.traducao = "";
             $$.label = "";
@@ -1390,57 +1126,41 @@ FATOR       : TK_ID '(' LISTA_ARGS ')'
 
 int yyparse();
 
+// --- FUNÇÃO `tamanho_string` SUBSTITUÍDA PELA DO SEGUNDO CÓDIGO ---
 int tamanho_string(string texto){ 
-    // pega as aspas da string
-    // vou deixar -2 na saída p tirar as aspas
-    // tem que colocar +1 por causa do \0 -> -2 + 1 = -1
-
-    int tamanhoString = 0;
-    int i = 0;
-    while(texto[i] != '\0'){ // se quiser testar como funciona isso aq só tirar o comentário do cout
-        //cout << texto[i] << " ";
-        tamanhoString++; 
-        i++;
-    }
-    //cout << endl;
-
-    //cout << tamanhoString-1<< endl;
-    return tamanhoString-1;
+    // O texto vem com aspas, ex: "abc". O tamanho é 5 ('"', 'a', 'b', 'c', '"').
+    // O tamanho real da string é 3 ('a', 'b', 'c').
+    // Precisamos alocar 4 bytes (para 'a', 'b', 'c', '\0').
+    // Então, o tamanho do texto do token - 2 (aspas) + 1 (null terminator) = tamanho - 1.
+    return texto.length() - 1;
 }
+
 string novo_rotulo() {
     return "L" + to_string(contador_rotulos++);
 }
 
-// Função para geração de variáveis temporárias
-string geraNomeTemp(string tipo)    // Dá para melhorar essa função
+string geraNomeTemp(string tipo)
 {
-    
     qntdVariaveisTemp++;
+    string label = "T" + to_string(qntdVariaveisTemp);
+    string tipo_real = "null";
 
-    if(tipo == "nmr" || tipo == "int")
-        temporarias.insert({"T" + to_string(qntdVariaveisTemp), "int"});
-    else if(tipo == "ncv" || tipo == "float")
-        temporarias.insert({"T" + to_string(qntdVariaveisTemp), "float"});
-    else if(tipo == "pp" || tipo == "bool")
-        temporarias.insert({"T" + to_string(qntdVariaveisTemp), "int"});
-    else if(tipo == "letra" || tipo == "char")
-        temporarias.insert({"T" + to_string(qntdVariaveisTemp), "char"});
-    else if(tipo == "falada" || tipo == "string")
-        temporarias.insert({"T" + to_string(qntdVariaveisTemp), "char_array"});
-    else // caso em que n tenha nenhum tipo atribuído - vamos inicializar "vazio" - ou em dinâmico
-        temporarias.insert({"T" + to_string(qntdVariaveisTemp), "null"});
-      
-    return "T" + to_string(qntdVariaveisTemp); 
+    if(tipo == "nmr" || tipo == "int") tipo_real = "int";
+    else if(tipo == "ncv" || tipo == "float") tipo_real = "float";
+    else if(tipo == "pp" || tipo == "bool") tipo_real = "int"; // Booleanos são traduzidos para int
+    else if(tipo == "letra" || tipo == "char") tipo_real = "char";
+    else if(tipo == "falada" || tipo == "string" || tipo == "string_literal" || tipo == "char_array") tipo_real = "string";
+    
+    temporarias.insert({label, tipo_real});
+    return label; 
 }
 
-// Vai retonar ao registrador assoaciado a variável
 string insereTemporariasTabelaSimbolos(string nome, string tipo)
 {   
     if (pilhaTabelasSimbolos.empty()) {
         yyerror("Erro de lógica: Tentou gerar temporária sem um escopo ativo.");
-        return ""; // Ou lance uma exceção
+        return "";
     }
-
     map<string, TIPO_SIMBOLO>& escopoAtual = pilhaTabelasSimbolos.back();
     
     TIPO_SIMBOLO temp;
@@ -1449,61 +1169,48 @@ string insereTemporariasTabelaSimbolos(string nome, string tipo)
     temp.label = temp.nomeVariavel;
 
     escopoAtual[temp.nomeVariavel] = temp;
-
-    if(debug) cout << "[DEBUG] Inserindo TEMPORARIA na tabela (escopo atual): " << temp.nomeVariavel << " (Tipo: " << temp.tipoVariavel << ")\n";
-
+    if(debug) cout << "[DEBUG] Inserindo TEMPORARIA na tabela: " << temp.nomeVariavel << " (Tipo: " << temp.tipoVariavel << ")\n";
     return temp.label;
 }
 
-void insereFixasTabelaSimbolos(string nome, string tipo,bool ehArray, int tamanhoArray, int tamanhoArray2, bool ehParam)
+void insereFixasTabelaSimbolos(string nome, string tipo, bool ehArray, int tamanhoArray, int tamanhoArray2, bool ehParam)
 {   
-    if (pilhaTabelasSimbolos.empty())
-    {
+    if (pilhaTabelasSimbolos.empty()) {
         yyerror("Erro de lógica: Tentou declarar variável sem um escopo ativo.");
         return;
     }
 
-    // Pega o escopo atual (topo da pilha)
     map<string, TIPO_SIMBOLO>& escopoAtual = pilhaTabelasSimbolos.back();
 
-    // Verifica se a variável já existe no escopo atual
-    if (escopoAtual.count(nome))
-    {
+    if (escopoAtual.count(nome)) {
         yyerror("Erro: Variável '" + nome + "' já declarada neste escopo.");
         return;
     }
 
-    if (debug) cout << "[DEBUG] Inserindo FIXA na tabela (escopo atual): " << nome << " (Tipo: " << tipo << ")\n";
+    if (debug) cout << "[DEBUG] Inserindo FIXA na tabela: " << nome << " (Tipo: " << tipo << ")\n";
 
     TIPO_SIMBOLO temp;
     temp.nomeVariavel = nome;
     temp.tipoVariavel = pegaTipo(tipo);
-    if(debug) cout << "[DEBUG] Tipo processado em pegaTipo: '" << temp.tipoVariavel << "' para o tipo recebido: '" << tipo << "'\n";
     temp.label = geraNomeTemp(tipo);
-
     temp.isArray = ehArray;
     temp.arraySize = tamanhoArray;
-    temp.arraySize2 = tamanhoArray2;  // novo!
-    temp.isParam = ehParam; // <-- USE O PARÂMETRO AQUI
+    temp.arraySize2 = tamanhoArray2;
+    temp.isParam = ehParam; // Campo preservado do primeiro código
 
     escopoAtual[nome] = temp;
 }
 
-// Função para verificar se existe na tabela de símbolos
 bool verificaTabelaSimbolos(string nome)
 {
-
-    for (int i = pilhaTabelasSimbolos.size() - 1; i >= 0; --i)
-    {
-        if (pilhaTabelasSimbolos[i].count(nome)) 
-        { 
+    for (int i = pilhaTabelasSimbolos.size() - 1; i >= 0; --i) {
+        if (pilhaTabelasSimbolos[i].count(nome)) { 
             return true; 
         }
     }
     return false;
 }
 
-// Só para pegar a variável na tabela de símbolos, tenho que setar em um caso onde não tenha
 TIPO_SIMBOLO pegaVariavelTabelaSimbolos(string nome)
 {
     for (int i = pilhaTabelasSimbolos.size() - 1; i >= 0; --i) {
@@ -1511,58 +1218,62 @@ TIPO_SIMBOLO pegaVariavelTabelaSimbolos(string nome)
             return pilhaTabelasSimbolos[i][nome];
         }
     }
-    // Adicionado para evitar warning de "no return statement"
     yyerror("Variável '" + nome + "' não encontrada.");
-    return {};
+    return {}; // Retorno para evitar warnings
 }
 
-// Função para printar 
 void printTabelaSimbolos()
 {
+    if (!debug) return;
     cout << "\n--- Tabela de Simbolos (Escopos) ---\n";
     for (size_t i = 0; i < pilhaTabelasSimbolos.size(); ++i) {
         cout << "Escopo " << i << ":\n";
         for (const auto& pair : pilhaTabelasSimbolos[i]) {
             const TIPO_SIMBOLO& simbolo = pair.second;
             cout << "  Nome: " << simbolo.nomeVariavel
-                      << ", Tipo: " << simbolo.tipoVariavel
-                      << ", Label: " << simbolo.label << endl;
+                 << ", Tipo: " << simbolo.tipoVariavel
+                 << ", Label: " << simbolo.label << endl;
         }
     }
     cout << "-----------------------------------\n";
 }
 
-// Função para converter tipo
 string pegaTipo(string tipo) 
 {
-    if(tipo == "nmr" || tipo == "int")
-        return "int";
-    else if(tipo == "ncv" || tipo == "float")
-        return "float";
-    else if(tipo == "letra" || tipo == "char")
-        return "char";
-    else if(tipo == "pp" || tipo == "bool")
-        return "bool";
-     else if(tipo == "falada" || tipo == "string")
-        return "string";    
-    else 
-        return "null";      
+    if(tipo == "nmr" || tipo == "int") return "int";
+    if(tipo == "ncv" || tipo == "float") return "float";
+    if(tipo == "letra" || tipo == "char") return "char";
+    if(tipo == "pp" || tipo == "bool") return "bool";
+    if(tipo == "falada" || tipo == "string" || tipo == "string_literal" || tipo == "char_array") return "string";
+    return "null";
 }
 
+// --- FUNÇÃO `infereTipo` SUBSTITUÍDA PELA DO SEGUNDO CÓDIGO ---
 string infereTipo(string tipo1, string tipo2)
-{   
+{
     if(debug) cout << "[DEBUG] Inferindo tipo entre: " << tipo1 << " e " << tipo2 << endl;
-    if(tipo1 == "int" && tipo1 == tipo2) return "int";
-    else if(tipo1 == "char" || tipo2 == "char") yyerror("Operando inválido!");
 
-    return "float";
+    string t1 = pegaTipo(tipo1);
+    string t2 = pegaTipo(tipo2);
+
+    // Se ambos são strings, o resultado é uma string
+    if (t1 == "string" && t2 == "string") {
+        return "string";
+    }
+
+    // Lógica para números (pode ser ajustada para ser mais robusta)
+    if(t1 == "float" || t2 == "float") return "float";
+    if(t1 == "int" && t2 == "int") return "int";
+    
+    yyerror("Operação com tipos incompatíveis: " + tipo1 + " e " + tipo2);
+    return "null"; // Retorno de erro
 }
 
 string pegaBooleano(string valor)
 {
     if(valor == "reto") return "true";
-    else if(valor == "torto") return "false";
-    else return "error"; // erro
+    if(valor == "torto") return "false";
+    return "error";
 }
 
 void entraEscopo()
@@ -1587,9 +1298,8 @@ int main( int argc, char* argv[] )
     return 0;
 }
 
-
 void yyerror( string MSG )
 {
-    cout << "Na linha " << yylinha << ": "<< MSG << endl;
+    cout << "Erro na linha " << yylinha << ": "<< MSG << endl;
     exit (0);
 }
