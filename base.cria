@@ -1,13 +1,6 @@
-ncv secundaria(nmr a, nmr b){
-   toma a+b
-}
-
 nmr principal() {
-   ncv x 
-   x = 5.0
-   ncv y 
-   y = 10.1
-   ncv z 
-   z = secundaria(x,y)
-   fala(z)
+
+    nmr vet[10]    
+    vet[3] = 1
+    fala(vet[3])
 }
