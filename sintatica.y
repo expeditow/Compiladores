@@ -102,7 +102,7 @@ extern int yylinha;
 %token TK_INT TK_FLOAT TK_BOOLEAN TK_CHAR TK_STRING
 %token TK_MAIOR_IGUAL TK_MENOR_IGUAL TK_DIFERENTE TK_IGUAL TK_E_LOGICO TK_OU_LOGICO TK_NEGACAO
 %token TK_IF TK_ELSE TK_WHILE TK_DO TK_FOR TK_IN TK_SWITCH TK_CASE TK_BREAK TK_DEFAULT TK_CONTINUE
-%token TK_INCREMENTO TK_DECREMENTO TK_MAIS_IGUAL TK_MENOS_IGUAL TK_MULT_IGUAL TK_DIV_IGUAL
+%token TK_INCREMENTO TK_DECREMENTO TK_MAIS_IGUAL TK_MENOS_IGUAL TK_MULT_IGUAL TK_DIV_IGUAL TK_POTENCIA
 %token TK_PRINT TK_SCAN
 %token FIM_LINHA
 
@@ -147,6 +147,19 @@ START
             "\treturn t11;\n"
             "}\n\n";
         
+        string funcao_potencia =
+            "float potencia_helper(float base, int expoente) {\n"
+            "\tfloat resultado = 1.0;\n"
+            "\tint contador = expoente;\n"
+            "L_POW_START:\n"
+            "\tif (contador <= 0) goto L_POW_END;\n"
+            "\tresultado = resultado * base;\n"
+            "\tcontador = contador - 1;\n"
+            "\tgoto L_POW_START;\n"
+            "L_POW_END:\n"
+            "\treturn resultado;\n"
+            "}\n\n";
+
         // Geração das declarações de variáveis (globais e temporárias)
         string declaracoes = "";
         for (auto i : temporarias) {
@@ -190,7 +203,7 @@ START
         }
 
         // Montagem do código final
-        cout << cabecalho << defines << funcao_meu_strlen << declaracoes << "\n" << $2.traducao << endl;
+        cout << cabecalho << defines << funcao_meu_strlen << funcao_potencia << declaracoes << "\n" << $2.traducao << endl;
         saiEscopo();
     } |
 ;
@@ -867,7 +880,7 @@ EXP         : EXP '+' TERMO
             { $$ = $1; }
             ;
 
-TERMO       : TERMO '*' FATOR
+TERMO       : TERMO '*' POTENCIA
             {   
                 $$.tipo = infereTipo($1.tipo, $3.tipo);
                 $$.label = insereTemporariasTabelaSimbolos("", $$.tipo);
@@ -887,7 +900,7 @@ TERMO       : TERMO '*' FATOR
                     $$.traducao += "\t" + $$.label + " = " + $1.label + " * " + $3.label + ";\n";
                 }
             }
-            | TERMO '/' FATOR 
+            | TERMO '/' POTENCIA
             { 
                 $$.tipo = infereTipo($1.tipo, $3.tipo);
                 $$.label = insereTemporariasTabelaSimbolos("", $$.tipo);
@@ -907,7 +920,7 @@ TERMO       : TERMO '*' FATOR
                     $$.traducao += "\t" + $$.label + " = " + $1.label + " / " + $3.label + ";\n";
                 }
             }
-            | FATOR
+            | POTENCIA
             { $$ = $1; }
             ;
 
@@ -1121,6 +1134,37 @@ LISTA_ARGS
         }
 ;
 
+POTENCIA
+    : FATOR TK_POTENCIA POTENCIA  // Associatividade à direita para 'a ** b ** c'
+        {
+            // Verificação: Nossa função helper espera um expoente inteiro.
+            if ($3.tipo != "int") {
+                yyerror("Potenciação com expoente não-inteiro não é suportada.");
+            }
+
+            string base = $1.label;
+            string expoente = $3.label;
+
+            // Junta o código de preparação da base e do expoente.
+            string traducao_preparacao = $1.traducao + $3.traducao;
+
+            // A função helper espera uma base float, então convertemos se for int.
+            if ($1.tipo == "int") {
+                string temp_base = insereTemporariasTabelaSimbolos("", "float");
+                traducao_preparacao += "\t" + temp_base + " = (float) " + base + ";\n";
+                base = temp_base;
+            }
+
+            $$.tipo = "float"; // Nossa função helper sempre retorna float.
+            $$.label = insereTemporariasTabelaSimbolos("", $$.tipo);
+
+            // A tradução agora é apenas uma chamada para a função helper
+            $$.traducao = traducao_preparacao +
+                         "\t" + $$.label + " = potencia_helper(" + base + ", " + expoente + ");\n";
+        }
+    | FATOR
+        { $$ = $1; } // Se não houver '**', apenas repassa os atributos do FATOR.
+;
 %%
 
 #include "lex.yy.c"

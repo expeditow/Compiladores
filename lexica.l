@@ -45,6 +45,7 @@ ID {LETRA}({LETRA}|{NUM})*
 "-="        { return TK_MENOS_IGUAL; }
 "*="        { return TK_MULT_IGUAL;  }
 "/="        { return TK_DIV_IGUAL;   }
+"**"        { return TK_POTENCIA; } 
 
 "toma"     { printf("[DEBUG LEXER] Palavra 'toma' encontrada! Retornando TK_RETURN.\n"); return TK_RETURN; }
 "nmr"       { yylval.label = yytext; return TK_TIPO; }

@@ -1,5 +1,5 @@
 nmr principal() {
-    falada x
-    x = "Ola"
-    fala(x)
+    ncv resultado
+    resultado = 3 + 2**4
+    fala(resultado)
 }
