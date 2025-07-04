@@ -1046,7 +1046,7 @@ FATOR       : TK_ID '(' LISTA_ARGS ')'
             }
             | TK_FLOAT
             {   
-                cout << "testnado";
+                //cout << "testnado";
                 $$.label = insereTemporariasTabelaSimbolos("", "float");
                 $$.traducao = "\t" + $$.label + " = " + $1.label + ";\n"; 
                 $$.tipo = "float"; 

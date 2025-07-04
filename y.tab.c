@@ -2735,7 +2735,7 @@ yyreduce:
   case 84: /* FATOR: TK_FLOAT  */
 #line 1048 "sintatica.y"
             {   
-                cout << "testnado";
+                //cout << "testnado";
                 yyval.label = insereTemporariasTabelaSimbolos("", "float");
                 yyval.traducao = "\t" + yyval.label + " = " + yyvsp[0].label + ";\n"; 
                 yyval.tipo = "float"; 

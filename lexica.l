@@ -26,7 +26,7 @@ ID {LETRA}({LETRA}|{NUM})*
 ":"         { return *yytext; }
 
 {NUM}		{ yylval.traducao = yytext;  yylval.label   = yytext; return TK_INT;  }
-{REAL}		{ yylval.traducao = yytext; return TK_FLOAT;}
+{REAL}		{ yylval.traducao = yytext; yylval.label = yytext; return TK_FLOAT;}
 
 "elog"      { return TK_E_LOGICO; }
 "&&"        { return TK_E_LOGICO; }

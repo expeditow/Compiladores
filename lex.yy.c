@@ -864,7 +864,7 @@ YY_RULE_SETUP
 case 9:
 YY_RULE_SETUP
 #line 29 "lexica.l"
-{ yylval.traducao = yytext; return TK_FLOAT;}
+{ yylval.traducao = yytext; yylval.label = yytext; return TK_FLOAT;}
 	YY_BREAK
 case 10:
 YY_RULE_SETUP
