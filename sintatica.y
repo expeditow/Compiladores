@@ -41,6 +41,7 @@ struct atributos
     string traducao;
     string tipo;
     int tamanho; // Campo adicionado do segundo código
+     vector<string> lista_tipos; // <-- ADICIONE/CONFIRME ESTA LINHA
 };
 
 // Estrutura para os símbolos na tabela
@@ -214,11 +215,17 @@ FUNCAO
         } else {
             TIPO_FUNCAO infoFunc;
             infoFunc.tipoRetorno = tipoRetorno;
+            infoFunc.tiposParametros = $4.lista_tipos; // <-- ESTA LINHA CONSERTA O BUG DE SALVAMENTO
+            
             tabelaFuncoes[nome] = infoFunc;
+            // --- DEBUG ---
+            cout << "[DEBUG FUNCAO] Salvando definicao da funcao '" << nome << "'. "
+                 << "Tipos de parametros esperados (" << infoFunc.tiposParametros.size() << "): ";
+            for(const auto& tipo : infoFunc.tiposParametros) { cout << tipo << " "; }
+            cout << endl;
             if(debug) cout << "[DEBUG] Função '" << nome << "' inserida na tabela de funções.\n";
         }
         
-        // Se esta é a função main, injeta o código para liberar a memória alocada
         if (nome == "main") {
             string frees = "";
             if (!variaveisAlocadas.empty()) {
@@ -227,7 +234,6 @@ FUNCAO
                     frees += "\tfree(" + varLabel + ");\n";
                 }
             }
-            // Insere os frees antes do final do bloco da função
             corpoFuncao += frees;
         }
 
@@ -237,21 +243,40 @@ FUNCAO
 
 PARAMS
     : PARAM ',' PARAMS
-        { $$.traducao = $1.traducao + ", " + $3.traducao; }
+        { 
+            $$.traducao = $1.traducao + ", " + $3.traducao;
+            
+            // Constrói a lista de tipos completa
+            $$.lista_tipos = $1.lista_tipos; // Começa com a lista do primeiro param
+            // Insere a lista dos params restantes no final
+            $$.lista_tipos.insert($$.lista_tipos.end(), $3.lista_tipos.begin(), $3.lista_tipos.end());
+        }
     | PARAM
-        { $$ = $1; }
+        { 
+            // Caso base: se for só um parâmetro, apenas repassa seus atributos
+            $$.traducao = $1.traducao;
+            $$.lista_tipos = $1.lista_tipos;
+        }
     | /* vazio */
-        { $$.traducao = ""; }
+        { 
+            $$.traducao = ""; 
+            // A lista de tipos aqui fica intencionalmente vazia
+        }
 ;
 
 PARAM
     : TK_TIPO TK_ID
     {
-        string tipo = pegaTipo($1.label);
-        // Passa 'true' para o último argumento, marcando como parâmetro
-        insereFixasTabelaSimbolos($2.label, $1.label, false, 0, 0, true); 
+        string tipoParametro = pegaTipo($1.label);
+        insereFixasTabelaSimbolos($2.label, $1.label, false, 0, 0, true);
 
-        $$.traducao = tipo + " " + $2.label;
+        // A tradução da assinatura em C++ (ex: "int x")
+        $$.traducao = tipoParametro + " " + $2.label;
+        
+        // Ação essencial: Cria uma lista contendo o tipo deste parâmetro
+        $$.lista_tipos.push_back(tipoParametro);
+          // --- DEBUG ---
+     
     }
 ;
 
@@ -908,15 +933,46 @@ TERMO       : TERMO '*' POTENCIA
 
 FATOR       : TK_ID '(' LISTA_ARGS ')'
             {
-                string nomeFunc = $1.label;
+                 string nomeFunc = $1.label;
                 
+                // 1. Verifica se a função existe na tabela de funções (seu código, está correto)
                 if (!tabelaFuncoes.count(nomeFunc)) {
                     yyerror("Função '" + nomeFunc + "' não foi declarada.");
                 }
 
                 TIPO_FUNCAO infoFunc = tabelaFuncoes[nomeFunc];
-                string tipoRetorno = infoFunc.tipoRetorno;
                 
+                // --- BLOCO DE VERIFICAÇÃO RIGOROSA DE TIPOS (CÓDIGO FALTANTE) ---
+
+                // Pega os tipos esperados (da definição da função)
+                vector<string> tiposEsperados = infoFunc.tiposParametros;
+                // Pega os tipos fornecidos (dos argumentos na chamada)
+                vector<string> tiposFornecidos = $3.lista_tipos;
+
+                // 2. Verifica se a QUANTIDADE de argumentos está correta
+                if (tiposEsperados.size() != tiposFornecidos.size()) {
+                    string erro = "Número incorreto de argumentos para a função '" + nomeFunc + "'. ";
+                    erro += "Esperado: " + to_string(tiposEsperados.size()) + ", ";
+                    erro += "Fornecido: " + to_string(tiposFornecidos.size()) + ".";
+                    yyerror(erro);
+                }
+
+                // 3. Verifica se o TIPO de cada argumento está correto
+                for (size_t i = 0; i < tiposEsperados.size(); ++i) {
+                    string esperado = tiposEsperados[i];
+                    string fornecido = tiposFornecidos[i];
+
+                    // Se os tipos não forem EXATAMENTE idênticos, a compilação falha.
+                    if (esperado != fornecido) {
+                        string erro = "Tipo incompatível para o argumento " + to_string(i+1) + " da função '" + nomeFunc + "'. ";
+                        erro += "Esperado: '" + esperado + "', mas foi fornecido: '" + fornecido + "'.";
+                        yyerror(erro);
+                    }
+                }
+                // --- FIM DO BLOCO DE VERIFICAÇÃO ---
+                
+                // Se todas as verificações passaram, a geração de código ocorre normalmente
+                string tipoRetorno = infoFunc.tipoRetorno;
                 $$.label = insereTemporariasTabelaSimbolos("", tipoRetorno);
                 $$.tipo = tipoRetorno;
                 $$.traducao = $3.traducao + "\t" + $$.label + " = " + nomeFunc + "(" + $3.label + ");\n";
@@ -1107,13 +1163,26 @@ LISTA_ARGS
         { 
             $$.traducao = $1.traducao + $3.traducao; 
             $$.label = $1.label + ", " + $3.label;
+
+            // Constrói a lista de tipos dos argumentos fornecidos
+            $$.lista_tipos.push_back(pegaTipo($1.tipo));
+            $$.lista_tipos.insert($$.lista_tipos.end(), $3.lista_tipos.begin(), $3.lista_tipos.end());
+             // --- DEBUG ---
+           
         }
     | EXP
-        { $$ = $1; }
+        { 
+            $$ = $1; 
+            // Garante que a lista de tipos seja criada para o único argFumento
+            $$.lista_tipos.push_back(pegaTipo($1.tipo));
+            // --- DEBUG ---
+           
+        }
     | /* vazio */
         {
             $$.traducao = "";
             $$.label = "";
+            // A lista de tipos fica intencionalmente vazia
         }
 ;
 
