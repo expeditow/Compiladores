@@ -1,0 +1,5 @@
+nmr principal() {
+   ncv x
+   x = 3**3
+   fala(x)
+}
