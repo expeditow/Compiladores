@@ -227,7 +227,7 @@ FUNCAO
         if (nome == "main") {
             string frees = "";
             if (!variaveisAlocadas.empty()) {
-                frees += "\n\t// Liberando memória alocada para strings\n";
+                frees += "\n";
                 for (const auto& varLabel : variaveisAlocadas) {
                     frees += "\tfree(" + varLabel + ");\n";
                 }
@@ -450,7 +450,7 @@ CMD         : EXP FIM_LINHA  { $$.traducao = $1.traducao; }
 
                     stringstream ss;
                     ss << "\t" << temp_print_str << " = (char*) malloc(" << tamanho << ");\n";
-                    ss << "\tstrcpy(" << temp_print_str << ", " << $3.label << ");\n";
+                    ss << "\tstrcpy(" << temp_print_str << ", " << $3.traducao << ");\n";
                     ss << "\tprintf(\"%s\\n\", " << temp_print_str << ");\n";
                     ss << "\tfree(" << temp_print_str << ");\n"; // Liberação imediata
                     $$.traducao = ss.str();
@@ -484,7 +484,7 @@ CMD         : EXP FIM_LINHA  { $$.traducao = $1.traducao; }
 
                 if (varSimbolo.tipoVariavel == "string") {
                     stringstream ss;
-                    ss << "\tfree(" << varSimbolo.label << "); // Libera string antiga antes de ler uma nova\n";
+                    ss << "\tfree(" << varSimbolo.label << ");\n";
                     ss << "\t" << varSimbolo.label << " = (char*) malloc(" << SCAN_BUFFER_SIZE << ");\n";
                     ss << "\tscanf(\"%s\", " << varSimbolo.label << ");\n";
                     
@@ -541,7 +541,8 @@ DECL        : TK_TIPO TK_ID
                     stringstream ss;
 
                     if ($4.tipo == "string_literal") {
-                        int tamanho = tamanho_string($4.label);
+
+                        int tamanho = tamanho_string($4.traducao);
                         ss << "\t" << temp_tamanho << " = " << tamanho << ";\n";
                         ss << "\t" << varSimbolo.label << " = (char*) malloc(" << temp_tamanho << ");\n";
                         ss << "\tstrcpy(" << varSimbolo.label << ", " << $4.traducao << ");\n";
@@ -591,10 +592,10 @@ ATR         : TK_ID '=' EXP
                     string temp_tamanho = insereTemporariasTabelaSimbolos("", "int");
                     stringstream ss;
 
-                    ss << "\tfree(" << varEsquerda.label << "); // Libera string antiga antes de nova atribuição\n";
+                    ss << "\tfree(" << varEsquerda.label << ");\n";
 
                     if ($3.tipo == "string_literal") {
-                        int tamanho = tamanho_string($3.label);
+                        int tamanho = tamanho_string($3.traducao);
                         ss << "\t" << temp_tamanho << " = " << tamanho << ";\n";
                         ss << "\t" << varEsquerda.label << " = (char*) malloc(" << temp_tamanho << ");\n";
                         ss << "\tstrcpy(" << varEsquerda.label << ", " << $3.traducao << ");\n";
